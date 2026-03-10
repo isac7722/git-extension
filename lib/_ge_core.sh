@@ -7,8 +7,8 @@
 
 # ── Config ──────────────────────────────────────────────────
 
-GE_CONFIG="${GE_CONFIG:-$HOME/.config/gituser/accounts}"
-GE_PROFILES_DIR="${GE_PROFILES_DIR:-$HOME/.config/gituser/profiles}"
+GE_CONFIG="${GE_CONFIG:-$HOME/.ge/credentials}"
+GE_PROFILES_DIR="${GE_PROFILES_DIR:-$HOME/.ge/profiles}"
 
 # ── Bash/Zsh compatibility layer ────────────────────────────
 
@@ -22,7 +22,8 @@ if [ -n "$ZSH_VERSION" ]; then
     [[ -n "${_map[$2]}" ]]
   }
   _ge_regex_match() {
-    # $1=string $2=pattern; sets _GE_MATCH array (1-indexed)
+    # $1=string $2=pattern; sets _GE_MATCH array
+    # zsh: 1-indexed (match[1]=group1), bash: 0-indexed (MATCH[0]=group1)
     if [[ "$1" =~ $2 ]]; then
       _GE_MATCH=("${match[@]}")
       return 0
@@ -60,7 +61,7 @@ _ge_cyan()   { printf "\033[36m%s\033[0m" "$*"; }
 
 # ── Account loading ──────────────────────────────────────────
 #
-# _GE_USER_MAP:          alias -> "name:email:key_path"
+# _GE_USER_MAP:          profile -> "name:email:key_path"
 # _GE_ACCOUNTS_RAW:      raw line list (used for list output)
 
 _ge_load_accounts() {
@@ -73,32 +74,49 @@ _ge_load_accounts() {
     return 1
   fi
 
+  local profile="" name="" email="" key_path=""
+
+  _ge_flush_profile() {
+    if [[ -n "$profile" && -n "$name" && -n "$email" && -n "$key_path" ]]; then
+      local expanded_key="$key_path"
+      expanded_key="${expanded_key/#\\\~/~}"
+      expanded_key="${expanded_key/#\~/$HOME}"
+      local value="${name}:${email}:${expanded_key}"
+      _GE_USER_MAP["$profile"]="$value"
+      _GE_ACCOUNTS_RAW+=("${profile}:${value}")
+    fi
+  }
+
   while IFS= read -r line; do
     # Skip empty lines and comments
     [[ -z "$line" ]] && continue
     _ge_comment_check "$line" && continue
 
-    local raw_aliases="${line%%:*}"
-    local rest="${line#*:}"
+    # Section header: [profile_name]
+    if [[ "$line" == \[*\] ]]; then
+      _ge_flush_profile
+      profile="${line#\[}"
+      profile="${profile%\]}"
+      name="" email="" key_path=""
+      continue
+    fi
 
-    # Expand ~ in key_path (last field)
-    local key_path="${rest##*:}"
-    local name_email="${rest%:*}"
-    key_path="${key_path/#\\\~/~}"   # \~ -> ~ (normalize if saved incorrectly)
-    key_path="${key_path/#\~/$HOME}" # ~ -> $HOME
-    rest="${name_email}:${key_path}"
+    # Key = value pairs
+    local key="${line%%=*}"
+    local val="${line#*=}"
+    key="${key// /}"     # trim spaces
+    val="${val#"${val%%[![:space:]]*}"}"  # trim leading spaces
 
-    _GE_ACCOUNTS_RAW+=("${raw_aliases}:${rest}")
-
-    # Register each alias in the map
-    local reply=()
-    _ge_split_csv "$raw_aliases"
-    local alias_entry
-    for alias_entry in "${reply[@]}"; do
-      alias_entry="${alias_entry// /}"
-      _GE_USER_MAP["$alias_entry"]="$rest"
-    done
+    case "$key" in
+      name)    name="$val" ;;
+      email)   email="$val" ;;
+      ssh_key) key_path="$val" ;;
+    esac
   done < "$GE_CONFIG"
+
+  # Flush the last profile
+  _ge_flush_profile
+  unset -f _ge_flush_profile
 }
 
 # ── Version ──────────────────────────────────────────────────

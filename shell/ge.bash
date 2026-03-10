@@ -20,6 +20,7 @@ fi
 source "$GE_HOME/lib/_ge_core.sh"
 source "$GE_HOME/lib/_ge_user.sh"
 source "$GE_HOME/lib/_ge_worktree.sh"
+source "$GE_HOME/lib/_ge_clean.sh"
 
 # ── Main dispatcher ──────────────────────────────────────────
 
@@ -32,6 +33,10 @@ function ge() {
     worktree|wt)
       shift
       _ge_worktree_dispatch "$@"
+      ;;
+    clean)
+      shift
+      _ge_clean_dispatch "$@"
       ;;
     update)
       _ge_update
@@ -63,6 +68,7 @@ _ge_help() {
   echo "$(_ge_bold 'Commands:')"
   printf "  %-20s %s\n" "user [sub]"     "Manage git user accounts"
   printf "  %-20s %s\n" "worktree [sub]" "Enhanced worktree management"
+  printf "  %-20s %s\n" "clean [opts]"   "Remove stale local branches"
   printf "  %-20s %s\n" "update"         "Update ge to the latest version"
   printf "  %-20s %s\n" "version"        "Show version"
   printf "  %-20s %s\n" "help"           "Show this help"

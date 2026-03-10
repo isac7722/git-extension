@@ -60,9 +60,9 @@ _ge_user_list() {
     return
   fi
 
-  local entry aliases rest name email key_path
+  local entry profile rest name email key_path
   for entry in "${_GE_ACCOUNTS_RAW[@]}"; do
-    aliases="${entry%%:*}"
+    profile="${entry%%:*}"
     rest="${entry#*:}"
     name="${rest%%:*}"
     rest="${rest#*:}"
@@ -83,7 +83,7 @@ _ge_user_list() {
       printf "  %s" "$(_ge_cyan '← current')"
     fi
     echo ""
-    printf "  %s %s\n" "$(_ge_dim 'aliases:')" "$(_ge_dim "$aliases")"
+    printf "  %s %s\n" "$(_ge_dim 'profile:')" "$(_ge_dim "$profile")"
   done
 
   echo "$(_ge_dim '──────────────────────────────────────────────')"
@@ -96,29 +96,30 @@ _ge_user_help() {
   _ge_load_accounts
 
   echo ""
-  echo "$(_ge_bold 'Usage:') ge user <alias | subcommand>"
+  echo "$(_ge_bold 'Usage:') ge user <profile | subcommand>"
   echo ""
   echo "$(_ge_bold 'Subcommands:')"
-  printf "  %-28s %s\n" "list"                "List all registered accounts"
-  printf "  %-28s %s\n" "current"             "Show the current git account"
-  printf "  %-28s %s\n" "add"                 "Interactively register an account"
-  printf "  %-28s %s\n" "set <alias>"         "Apply account to current repo only (--local)"
-  printf "  %-28s %s\n" "ssh-key <a> [path]"  "View or update SSH key path"
-  printf "  %-28s %s\n" "rule add <a> <dir>"  "Add auto-switch rule for a directory"
-  printf "  %-28s %s\n" "rule list"           "List registered rules"
-  printf "  %-28s %s\n" "rule remove <a> <dir>" "Remove a rule"
-  printf "  %-28s %s\n" "clone <alias> <url>" "Clone with a specific account"
-  printf "  %-28s %s\n" "<alias>"             "Switch to the specified account (--global)"
+  printf "  %-28s %s\n" "list"                  "List all registered accounts"
+  printf "  %-28s %s\n" "current"               "Show the current git account"
+  printf "  %-28s %s\n" "add"                   "Interactively register an account"
+  printf "  %-28s %s\n" "set <profile>"         "Apply account to current repo only (--local)"
+  printf "  %-28s %s\n" "ssh-key <p> [path]"    "View or update SSH key path"
+  printf "  %-28s %s\n" "rule add <p> <dir>"    "Add auto-switch rule for a directory"
+  printf "  %-28s %s\n" "rule list"             "List registered rules"
+  printf "  %-28s %s\n" "rule remove <p> <dir>" "Remove a rule"
+  printf "  %-28s %s\n" "clone <profile> <url>" "Clone with a specific account"
+  printf "  %-28s %s\n" "migrate"               "Migrate from legacy config format"
+  printf "  %-28s %s\n" "<profile>"             "Switch to the specified account (--global)"
   echo ""
 
   if [[ ${#_GE_ACCOUNTS_RAW[@]} -gt 0 ]]; then
-    echo "$(_ge_bold 'Available accounts:')"
-    local entry aliases rest name
+    echo "$(_ge_bold 'Available profiles:')"
+    local entry profile rest name
     for entry in "${_GE_ACCOUNTS_RAW[@]}"; do
-      aliases="${entry%%:*}"
+      profile="${entry%%:*}"
       rest="${entry#*:}"
       name="${rest%%:*}"
-      printf "  %-24s → %s\n" "$(_ge_cyan "$aliases")" "$name"
+      printf "  %-24s → %s\n" "$(_ge_cyan "$profile")" "$name"
     done
     echo ""
   else
@@ -142,9 +143,9 @@ _ge_user_fzf() {
   current_name="$(git config --global user.name 2>/dev/null)"
 
   local options=()
-  local entry aliases rest name email key_path mark
+  local entry profile rest name email key_path mark
   for entry in "${_GE_ACCOUNTS_RAW[@]}"; do
-    aliases="${entry%%:*}"
+    profile="${entry%%:*}"
     rest="${entry#*:}"
     name="${rest%%:*}"
     rest="${rest#*:}"
@@ -152,7 +153,7 @@ _ge_user_fzf() {
     key_path="${rest#*:}"
     mark=""
     [[ "$name" == "$current_name" ]] && mark=" ✔"
-    options+=("${aliases%%,*}  ${name}  <${email}>${mark}")
+    options+=("${profile}  ${name}  <${email}>${mark}")
   done
 
   local selected
@@ -177,7 +178,7 @@ _ge_user_do() {
   _ge_load_accounts
 
   if ! _ge_map_has_key _GE_USER_MAP "$alias_key"; then
-    echo "$(_ge_red '✗') Unknown alias: '$(_ge_yellow "$alias_key")'"
+    echo "$(_ge_red '✗') Unknown profile: '$(_ge_yellow "$alias_key")'"
     _ge_user_help
     return 1
   fi
@@ -199,7 +200,11 @@ _ge_user_add() {
   echo "$(_ge_dim '──────────────────────────────')"
   echo ""
 
-  local gu_name gu_email gu_key gu_aliases
+  local gu_profile gu_name gu_email gu_key
+
+  printf "  Profile name $(_ge_dim '(e.g. work, personal)'): "
+  read -r gu_profile
+  [[ -z "$gu_profile" ]] && echo "$(_ge_red '✗') Profile name is required." && return 1
 
   printf "  Name $(_ge_dim '(git user.name)'): "
   read -r gu_name
@@ -219,20 +224,20 @@ _ge_user_add() {
     [[ "$(_ge_to_lower "$confirm")" != "y" ]] && echo "Cancelled." && return 0
   fi
 
-  printf "  Aliases $(_ge_dim '(comma-separated, first is display name)'): "
-  read -r gu_aliases
-  [[ -z "$gu_aliases" ]] && gu_aliases="$gu_name"
-
-  local new_line="${gu_aliases}:${gu_name}:${gu_email}:${gu_key/#$HOME/~}"
-
   mkdir -p "$(dirname "$GE_CONFIG")"
-  echo "$new_line" >> "$GE_CONFIG"
+  cat >> "$GE_CONFIG" <<EOF
+
+[$gu_profile]
+name = $gu_name
+email = $gu_email
+ssh_key = ${gu_key/#$HOME/\~}
+EOF
 
   echo ""
   echo "$(_ge_green '✔') Account added"
+  printf "  %-10s %s\n" "Profile:" "$(_ge_bold "$gu_profile")"
   printf "  %-10s %s\n" "Name:"    "$(_ge_bold "$gu_name")"
   printf "  %-10s %s\n" "Email:"   "$gu_email"
-  printf "  %-10s %s\n" "Aliases:" "$gu_aliases"
   echo ""
 }
 
@@ -243,9 +248,9 @@ _ge_user_ssh_key() {
   local new_key="$2"
 
   if [[ -z "$alias_key" ]]; then
-    echo "$(_ge_bold 'Usage:') ge user ssh-key <alias> [new_path]"
+    echo "$(_ge_bold 'Usage:') ge user ssh-key <profile> [new_path]"
     echo ""
-    echo "  Providing only an alias shows the current SSH key path."
+    echo "  Providing only a profile shows the current SSH key path."
     echo "  Providing new_path updates it to that path."
     echo ""
     return 1
@@ -254,7 +259,7 @@ _ge_user_ssh_key() {
   _ge_load_accounts
 
   if ! _ge_map_has_key _GE_USER_MAP "$alias_key"; then
-    echo "$(_ge_red '✗') Unknown alias: '$(_ge_yellow "$alias_key")'"
+    echo "$(_ge_red '✗') Unknown profile: '$(_ge_yellow "$alias_key")'"
     return 1
   fi
 
@@ -287,30 +292,27 @@ _ge_user_ssh_key() {
     [[ "$(_ge_to_lower "$confirm")" != "y" ]] && echo "Cancelled." && return 0
   fi
 
-  local new_key_display="${new_key/#$HOME/~}"
+  local new_key_display="${new_key/#$HOME/\~}"
 
+  # Replace ssh_key line in the matching profile section
   local tmp_file
   tmp_file="$(mktemp)"
   local matched=false
+  local in_target=false
 
   while IFS= read -r line; do
-    if [[ -z "$line" ]] || _ge_comment_check "$line"; then
-      echo "$line" >> "$tmp_file"
-      continue
+    # Section header
+    if [[ "$line" == \[*\] ]]; then
+      local section="${line#\[}"
+      section="${section%\]}"
+      in_target=false
+      [[ "$section" == "$alias_key" ]] && in_target=true
     fi
 
-    local line_aliases="${line%%:*}"
-    local found=false
-    local reply=()
-    _ge_split_csv "$line_aliases"
-    local a
-    for a in "${reply[@]}"; do
-      [[ "${a// /}" == "$alias_key" ]] && found=true && break
-    done
-
-    if $found; then
-      local line_rest="${line%:*}"
-      echo "${line_rest}:${new_key_display}" >> "$tmp_file"
+    # Replace ssh_key in target section
+    local trimmed="${line// /}"
+    if $in_target && [[ "$trimmed" == ssh_key=* ]]; then
+      echo "ssh_key = $new_key_display" >> "$tmp_file"
       matched=true
     else
       echo "$line" >> "$tmp_file"
@@ -352,7 +354,7 @@ _ge_user_set() {
   local alias_key="$1"
 
   if [[ -z "$alias_key" ]]; then
-    echo "$(_ge_red '✗') Usage: ge user set <alias>"
+    echo "$(_ge_red '✗') Usage: ge user set <profile>"
     return 1
   fi
 
@@ -377,9 +379,9 @@ _ge_user_rule() {
     *)
       echo "$(_ge_bold 'Usage:') ge user rule <add|list|remove>"
       echo ""
-      printf "  %-28s %s\n" "rule add <alias> <dir>"    "Add an auto-switch rule for a directory"
-      printf "  %-28s %s\n" "rule list"                 "List registered rules"
-      printf "  %-28s %s\n" "rule remove <alias> <dir>" "Remove a rule"
+      printf "  %-28s %s\n" "rule add <profile> <dir>"    "Add an auto-switch rule for a directory"
+      printf "  %-28s %s\n" "rule list"                  "List registered rules"
+      printf "  %-28s %s\n" "rule remove <profile> <dir>" "Remove a rule"
       echo ""
       ;;
   esac
@@ -390,14 +392,14 @@ _ge_user_rule_add() {
   local target_dir="$2"
 
   if [[ -z "$alias_key" || -z "$target_dir" ]]; then
-    echo "$(_ge_red '✗') Usage: ge user rule add <alias> <directory>"
+    echo "$(_ge_red '✗') Usage: ge user rule add <profile> <directory>"
     return 1
   fi
 
   _ge_load_accounts
 
   if ! _ge_map_has_key _GE_USER_MAP "$alias_key"; then
-    echo "$(_ge_red '✗') Unknown alias: '$(_ge_yellow "$alias_key")'"
+    echo "$(_ge_red '✗') Unknown profile: '$(_ge_yellow "$alias_key")'"
     return 1
   fi
 
@@ -453,7 +455,7 @@ _ge_user_rule_remove() {
   local target_dir="$2"
 
   if [[ -z "$alias_key" ]]; then
-    echo "$(_ge_red '✗') Usage: ge user rule remove <alias> [directory]"
+    echo "$(_ge_red '✗') Usage: ge user rule remove <profile> [directory]"
     return 1
   fi
 
@@ -518,10 +520,10 @@ _ge_user_rule_list() {
   local alias_key target_dir
   while IFS= read -r line; do
     # Match both ge:rule: and legacy gituser:rule: markers
-    if _ge_regex_match "$line" '^# (ge|gituser):rule:([^:]+):(.+)$'; then
-      alias_key="${_GE_MATCH[1]}"
-      target_dir="${_GE_MATCH[2]}"
-      # zsh arrays are 1-indexed, bash 0-indexed — handled by _ge_regex_match
+    if [[ "$line" == "# ge:rule:"* || "$line" == "# gituser:rule:"* ]]; then
+      local rule_part="${line#*:rule:}"
+      alias_key="${rule_part%%:*}"
+      target_dir="${rule_part#*:}"
       _ge_load_accounts
       local entry="${_GE_USER_MAP[$alias_key]:-}"
       local name email rest
@@ -543,7 +545,7 @@ _ge_user_rule_list() {
 
   if ! $found; then
     echo "  No rules registered."
-    echo "  Run 'ge user rule add <alias> <dir>' to add one."
+    echo "  Run 'ge user rule add <profile> <dir>' to add one."
   fi
 
   echo "$(_ge_dim '──────────────────────────────────────────────')"
@@ -559,14 +561,14 @@ _ge_user_clone() {
   local extra_args=("$@")
 
   if [[ -z "$alias_key" || -z "$repo_url" ]]; then
-    echo "$(_ge_red '✗') Usage: ge user clone <alias> <url> [git-clone-options...]"
+    echo "$(_ge_red '✗') Usage: ge user clone <profile> <url> [git-clone-options...]"
     return 1
   fi
 
   _ge_load_accounts
 
   if ! _ge_map_has_key _GE_USER_MAP "$alias_key"; then
-    echo "$(_ge_red '✗') Unknown alias: '$(_ge_yellow "$alias_key")'"
+    echo "$(_ge_red '✗') Unknown profile: '$(_ge_yellow "$alias_key")'"
     return 1
   fi
 
@@ -632,6 +634,77 @@ _ge_user_current() {
   echo ""
 }
 
+# ── Migrate from legacy config ────────────────────────────────
+
+_ge_user_migrate() {
+  local legacy_config="$HOME/.config/gituser/accounts"
+  local legacy_profiles="$HOME/.config/gituser/profiles"
+
+  if [[ ! -f "$legacy_config" ]]; then
+    echo "$(_ge_yellow '⚠') Legacy config not found: $legacy_config"
+    echo "  Nothing to migrate."
+    return 1
+  fi
+
+  echo ""
+  echo "$(_ge_bold 'Migrating legacy config') → $GE_CONFIG"
+  echo "$(_ge_dim '──────────────────────────────────────────────')"
+
+  mkdir -p "$(dirname "$GE_CONFIG")"
+
+  local count=0
+  local ini_output=""
+
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    _ge_comment_check "$line" && continue
+
+    local raw_aliases="${line%%:*}"
+    local rest="${line#*:}"
+    local name="${rest%%:*}"
+    rest="${rest#*:}"
+    local email="${rest%%:*}"
+    local key_path="${rest#*:}"
+
+    # Use first alias as profile name
+    local profile="${raw_aliases%%,*}"
+    profile="${profile// /}"
+
+    if [[ -n "$ini_output" ]]; then
+      ini_output="${ini_output}
+"
+    fi
+    ini_output="${ini_output}[$profile]
+name = $name
+email = $email
+ssh_key = $key_path"
+
+    count=$((count + 1))
+  done < "$legacy_config"
+
+  if [[ $count -eq 0 ]]; then
+    echo "  $(_ge_yellow '⚠') No accounts found in legacy config."
+    return 1
+  fi
+
+  printf '%s\n' "$ini_output" > "$GE_CONFIG"
+
+  # Copy profiles directory if it exists
+  if [[ -d "$legacy_profiles" ]]; then
+    mkdir -p "$GE_PROFILES_DIR"
+    cp -r "$legacy_profiles"/* "$GE_PROFILES_DIR/" 2>/dev/null || true
+    echo "  $(_ge_dim "Profiles copied: $legacy_profiles → $GE_PROFILES_DIR")"
+  fi
+
+  # Backup legacy config
+  cp "$legacy_config" "${legacy_config}.bak"
+  echo "  $(_ge_dim "Legacy config backed up: ${legacy_config}.bak")"
+
+  echo ""
+  echo "$(_ge_green '✔') Migrated $count account(s) to $GE_CONFIG"
+  echo ""
+}
+
 # ── User subcommand dispatcher ───────────────────────────────
 
 _ge_user_dispatch() {
@@ -650,6 +723,7 @@ _ge_user_dispatch() {
     ssh-key)        shift; _ge_user_ssh_key "$@" ;;
     rule)           shift; _ge_user_rule "$@" ;;
     clone)          shift; _ge_user_clone "$@" ;;
+    migrate)        _ge_user_migrate ;;
     help|-h|--help) _ge_user_help ;;
     *)              _ge_user_do "$1" ;;
   esac

@@ -18,6 +18,7 @@ set -e
 
 GE_REPO="https://github.com/isac7722/ge-cli.git"
 GE_DEFAULT_DIR="$HOME/.ge"
+GE_CONFIG_DIR="$HOME/.ge"
 
 # Detect if running from cloned repo or remote
 GE_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
@@ -111,6 +112,107 @@ else
   log "bin/ge will be available after shell integration"
 fi
 
+# ── 3.5. Migrate legacy gituser data ─────────────────────────
+
+LEGACY_DIR="$HOME/.config/gituser"
+LEGACY_CONFIG="$LEGACY_DIR/accounts"
+LEGACY_PROFILES="$LEGACY_DIR/profiles"
+
+if [[ -d "$LEGACY_DIR" ]]; then
+  section "Legacy gituser migration"
+
+  # a. Account migration
+  if [[ -f "$LEGACY_CONFIG" ]]; then
+    has_real_data=false
+    if [[ -f "$GE_CONFIG_DIR/credentials" ]]; then
+      while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        [[ "${line:0:1}" == "#" ]] && continue
+        has_real_data=true
+        break
+      done < "$GE_CONFIG_DIR/credentials"
+    fi
+
+    if $has_real_data; then
+      log "Credentials already exist, skipping account migration"
+    else
+      count=0
+      ini_output=""
+      while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        [[ "${line:0:1}" == "#" ]] && continue
+        raw_aliases="${line%%:*}"
+        rest="${line#*:}"
+        name="${rest%%:*}"
+        rest="${rest#*:}"
+        email="${rest%%:*}"
+        key_path="${rest#*:}"
+        profile="${raw_aliases%%,*}"
+        profile="${profile// /}"
+        [[ -n "$ini_output" ]] && ini_output="${ini_output}
+"
+        ini_output="${ini_output}[$profile]
+name = $name
+email = $email
+ssh_key = $key_path"
+        count=$((count + 1))
+      done < "$LEGACY_CONFIG"
+
+      if [[ $count -gt 0 ]]; then
+        if $DRY_RUN; then
+          log "[dry-run] Would migrate $count account(s) to $GE_CONFIG_DIR/credentials"
+        else
+          mkdir -p "$GE_CONFIG_DIR"
+          printf '%s\n' "$ini_output" > "$GE_CONFIG_DIR/credentials"
+          success "Migrated $count account(s) from legacy config"
+        fi
+      fi
+    fi
+  fi
+
+  # b. Profile copy
+  if [[ -d "$LEGACY_PROFILES" ]]; then
+    if $DRY_RUN; then
+      log "[dry-run] Would copy profiles to $GE_CONFIG_DIR/profiles"
+    else
+      mkdir -p "$GE_CONFIG_DIR/profiles"
+      cp -n "$LEGACY_PROFILES"/* "$GE_CONFIG_DIR/profiles/" 2>/dev/null || true
+      success "Profiles copied from legacy directory"
+    fi
+  fi
+
+  # c. gitconfig marker conversion
+  GITCONFIG="$HOME/.gitconfig"
+  if [[ -f "$GITCONFIG" ]] && grep -q "gituser" "$GITCONFIG" 2>/dev/null; then
+    if $DRY_RUN; then
+      log "[dry-run] Would update gitconfig markers"
+    else
+      tmp_gc="$(mktemp)"
+      sed -e 's/# gituser:rule:/# ge:rule:/g' \
+          -e 's|\.config/gituser/profiles/|.ge/profiles/|g' \
+          "$GITCONFIG" > "$tmp_gc"
+      mv "$tmp_gc" "$GITCONFIG"
+      success "Updated gitconfig markers"
+    fi
+  fi
+
+  # d. Backup legacy directory (RC block cleanup happens in step 4)
+  if $DRY_RUN; then
+    log "[dry-run] Would backup $LEGACY_DIR"
+  else
+    backup_name="${LEGACY_DIR}.bak.$(date +%Y%m%d)"
+    mv "$LEGACY_DIR" "$backup_name"
+    success "Backed up legacy data → $backup_name"
+  fi
+
+  # e. gituser command removal hint
+  if command -v gituser &>/dev/null; then
+    echo ""
+    warn "Legacy 'gituser' command is still installed."
+    log "  To remove it: npm uninstall -g gituser"
+  fi
+fi
+
 # ── 4. Inject shell integration into RC file ──────────────────
 
 section "Shell integration ($RC_FILE)"
@@ -159,9 +261,8 @@ fi
 
 section "Git User Config File"
 
-GE_CONFIG_DIR="$HOME/.config/gituser"
-GE_CONFIG="$GE_CONFIG_DIR/accounts"
-GE_EXAMPLE="$GE_HOME/config/gitusers.example"
+GE_CONFIG="$GE_CONFIG_DIR/credentials"
+GE_EXAMPLE="$GE_HOME/config/credentials.example"
 
 if [[ ! -f "$GE_CONFIG" ]]; then
   if $DRY_RUN; then
@@ -175,8 +276,11 @@ if [[ ! -f "$GE_CONFIG" ]]; then
     log "▶ Edit the file below to register your accounts:"
     log "     \$EDITOR $GE_CONFIG"
     log ""
-    log "  Format:  aliases:name:email:~/.ssh/key_name"
-    log "  Example: work,w:John:john@company.com:~/.ssh/work_ed25519"
+    log "  Format:"
+    log "    [profile_name]"
+    log "    name = Your Name"
+    log "    email = you@example.com"
+    log "    ssh_key = ~/.ssh/key_name"
   fi
 else
   success "Config file already exists: $GE_CONFIG"
@@ -194,7 +298,7 @@ echo "    source $RC_FILE"
 echo ""
 echo "  Usage:"
 echo "    ge user list      # list accounts"
-echo "    ge user <alias>   # switch account"
+echo "    ge user <profile> # switch account"
 echo "    ge worktree add   # create worktree"
 echo "    ge commit -m msg  # git passthrough"
 echo ""
