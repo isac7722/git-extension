@@ -90,36 +90,38 @@ _ge_user_list() {
   _ge_user_list_render() {
     # Move cursor up to redraw (skip on first render)
     if [[ "${1:-}" == "redraw" ]]; then
-      # total lines = header(2) + accounts(total*2) + footer(2)
       local lines_up=$(( 2 + total * 2 + 2 ))
-      printf "\033[%dA" "$lines_up"
+      printf "\033[%dA\033[J" "$lines_up"
     fi
 
-    echo "$(_ge_bold '  Git User Accounts')"
-    echo "$(_ge_dim '  ──────────────────────────────────────────────')"
+    printf "  %s\n" "$(_ge_bold 'Git User Accounts')"
+    printf "  %s\n" "$(_ge_dim '──────────────────────────────────────────────')"
 
-    local idx
+    local idx pad_len
     for (( idx=0; idx<total; idx++ )); do
-      local marker="  " label current_mark=""
+      local raw_name="${names[$idx]}"
+      # Calculate padding based on raw name length (no ANSI)
+      pad_len=$(( 20 - ${#raw_name} ))
+      (( pad_len < 1 )) && pad_len=1
+      local padding=""
+      printf -v padding '%*s' "$pad_len" ""
 
       if [[ $idx -eq $selected ]]; then
-        marker="$(_ge_cyan '❯ ')"
-        label="$(_ge_bold "${names[$idx]}")"
+        printf "  %s %s%s%s" "$(_ge_cyan '❯')" "$(_ge_bold "$raw_name")" "$padding" "$(_ge_dim "${emails[$idx]}")"
       else
-        marker="  "
-        label="${names[$idx]}"
+        printf "    %s%s%s" "$raw_name" "$padding" "$(_ge_dim "${emails[$idx]}")"
       fi
 
       if [[ "${names[$idx]}" == "$current_name" && "${emails[$idx]}" == "$current_email" ]]; then
-        current_mark="  $(_ge_green '✔ current')"
+        printf "  %s" "$(_ge_green '✔ current')"
       fi
+      printf "\n"
 
-      printf "%s%-20s %s%s\n" "$marker" "$label" "$(_ge_dim "${emails[$idx]}")" "$current_mark"
-      printf "    %s %s\n" "$(_ge_dim 'profile:')" "$(_ge_dim "${profiles[$idx]}")"
+      printf "      %s %s\n" "$(_ge_dim 'profile:')" "$(_ge_dim "${profiles[$idx]}")"
     done
 
-    echo "$(_ge_dim '  ──────────────────────────────────────────────')"
-    echo "$(_ge_dim '  ↑↓ navigate  ⏎ select  q cancel')"
+    printf "  %s\n" "$(_ge_dim '──────────────────────────────────────────────')"
+    printf "  %s\n" "$(_ge_dim '↑↓ navigate  ⏎ select  q cancel')"
   }
 
   # Initial render
