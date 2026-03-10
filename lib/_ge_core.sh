@@ -18,8 +18,7 @@ if [ -n "$ZSH_VERSION" ]; then
   _ge_declare_map() { typeset -gA "$1"; }
   _ge_declare_array() { typeset -ga "$1"; }
   _ge_map_has_key() {
-    local -n _map="$1"
-    [[ -n "${_map[$2]}" ]]
+    eval "(( \${+${1}[$2]} ))"
   }
   _ge_regex_match() {
     # $1=string $2=pattern; sets _GE_MATCH array
@@ -82,7 +81,7 @@ _ge_load_accounts() {
       expanded_key="${expanded_key/#\\\~/~}"
       expanded_key="${expanded_key/#\~/$HOME}"
       local value="${name}:${email}:${expanded_key}"
-      _GE_USER_MAP["$profile"]="$value"
+      _GE_USER_MAP[$profile]="$value"
       _GE_ACCOUNTS_RAW+=("${profile}:${value}")
     fi
   }

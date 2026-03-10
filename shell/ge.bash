@@ -18,6 +18,18 @@ fi
 
 # Source library files
 source "$GE_HOME/lib/_ge_core.sh"
+
+# ── Bash compat overrides ──
+_ge_split_csv() { IFS=',' read -ra reply <<< "$1"; }
+_ge_to_lower() { echo "${1,,}"; }
+_ge_declare_map() { declare -gA "$1"; }
+_ge_declare_array() { declare -ga "$1"; }
+_ge_map_has_key() { local -n _map="$1"; [[ -n "${_map[$2]+x}" ]]; }
+_ge_regex_match() {
+  if [[ "$1" =~ $2 ]]; then _GE_MATCH=("${BASH_REMATCH[@]:1}"); return 0; fi; return 1
+}
+_ge_comment_check() { [[ "${1:0:1}" == "#" ]]; }
+
 source "$GE_HOME/lib/_ge_user.sh"
 source "$GE_HOME/lib/_ge_worktree.sh"
 source "$GE_HOME/lib/_ge_clean.sh"
@@ -26,6 +38,10 @@ source "$GE_HOME/lib/_ge_clean.sh"
 
 function ge() {
   case "$1" in
+    init)
+      shift
+      command ge init "$@"
+      ;;
     user)
       shift
       _ge_user_dispatch "$@"
