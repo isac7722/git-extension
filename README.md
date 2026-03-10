@@ -13,7 +13,7 @@ A lightweight CLI that extends git with multi-account management, enhanced workt
 ### npm (recommended)
 
 ```bash
-npm install -g ge-cli
+npm install -g git-extension
 
 # Add to your shell RC file (~/.zshrc or ~/.bashrc):
 eval "$(ge init zsh)"    # for zsh
@@ -23,13 +23,13 @@ eval "$(ge init bash)"   # for bash
 ### curl
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/isac7722/ge-cli/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/isac7722/git-extension/main/install.sh)
 ```
 
 ### Manual
 
 ```bash
-git clone https://github.com/isac7722/ge-cli.git ~/.ge
+git clone https://github.com/isac7722/git-extension.git ~/.ge
 ~/.ge/install.sh
 ```
 

@@ -91,16 +91,16 @@ _ge_update() {
 
   if [[ ! -d "$GE_HOME/.git" ]]; then
     # npm install — suggest npm update
-    echo "$(_ge_bold 'Update ge-cli')"
+    echo "$(_ge_bold 'Update git-extension')"
     echo ""
     echo "  Installed via npm. Run:"
-    echo "    npm update -g ge-cli"
+    echo "    npm update -g git-extension"
     echo ""
     return 0
   fi
 
   echo ""
-  echo "$(_ge_bold 'Update ge-cli')"
+  echo "$(_ge_bold 'Update git-extension')"
   echo "$(_ge_dim '──────────────────────────────')"
   printf "  %-10s %s\n" "Path:" "$(_ge_dim "$GE_HOME")"
   echo ""

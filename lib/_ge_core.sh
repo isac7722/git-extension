@@ -1,5 +1,5 @@
 # ============================================================
-# ge-cli core library
+# git-extension core library
 # ============================================================
 # Shared utilities: color helpers, config loading, bash/zsh compat layer
 # This file is sourced by both shell functions and bin/ge
