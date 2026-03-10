@@ -6,7 +6,7 @@
 
 _ge_worktree_add() {
   local branch="$1"
-  local dir="${2:-./$branch}"
+  local dir="${2:-../$branch}"
 
   if [[ -z "$branch" ]]; then
     echo "$(_ge_red '✗') Usage: ge worktree add <branch> [directory]"
@@ -26,10 +26,13 @@ _ge_worktree_add() {
 
   local status=$?
   if [[ $status -eq 0 ]]; then
+    local abs_dir
+    abs_dir="$(cd "$dir" && pwd)"
+    cd "$abs_dir"
     echo ""
-    echo "$(_ge_green '✔') Worktree created"
+    echo "$(_ge_green '✔') Worktree created & switched"
     printf "  %-10s %s\n" "Branch:" "$(_ge_bold "$branch")"
-    printf "  %-10s %s\n" "Path:"   "$(_ge_dim "$dir")"
+    printf "  %-10s %s\n" "Path:"   "$(_ge_dim "$abs_dir")"
     echo ""
   fi
   return $status
