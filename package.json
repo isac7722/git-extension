@@ -1,0 +1,31 @@
+{
+  "name": "ge-cli",
+  "version": "1.0.0",
+  "description": "Git Extension CLI — multi-account management, enhanced worktree, and git passthrough",
+  "bin": {
+    "ge": "./bin/ge"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "shell/",
+    "config/"
+  ],
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "keywords": [
+    "git",
+    "cli",
+    "git-user",
+    "git-account",
+    "worktree",
+    "multi-account"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/isac7722/ge-cli.git"
+  }
+}

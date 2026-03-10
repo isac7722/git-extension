@@ -1,0 +1,129 @@
+# ============================================================
+# ge — Git Extension CLI (zsh shell function)
+# ============================================================
+# This file is sourced into the user's shell via:
+#   eval "$(ge init zsh)"
+# ============================================================
+
+# Determine GE_HOME if not already set
+if [[ -z "$GE_HOME" ]]; then
+  # Try to find from this file's location
+  GE_HOME="${0:A:h:h}"
+fi
+
+# Source library files
+source "$GE_HOME/lib/_ge_core.sh"
+source "$GE_HOME/lib/_ge_user.sh"
+source "$GE_HOME/lib/_ge_worktree.sh"
+
+# ── Main dispatcher ──────────────────────────────────────────
+
+function ge() {
+  case "$1" in
+    user)
+      shift
+      _ge_user_dispatch "$@"
+      ;;
+    worktree|wt)
+      shift
+      _ge_worktree_dispatch "$@"
+      ;;
+    update)
+      _ge_update
+      ;;
+    help|--help|-h)
+      _ge_help
+      ;;
+    version|--version|-v)
+      _ge_version
+      ;;
+    "")
+      _ge_help
+      ;;
+    *)
+      # Git passthrough
+      git "$@"
+      ;;
+  esac
+}
+
+# ── Help ─────────────────────────────────────────────────────
+
+_ge_help() {
+  echo ""
+  echo "$(_ge_bold 'ge') — Git Extension CLI v${GE_VERSION}"
+  echo ""
+  echo "$(_ge_bold 'Usage:') ge <command> [args...]"
+  echo ""
+  echo "$(_ge_bold 'Commands:')"
+  printf "  %-20s %s\n" "user [sub]"     "Manage git user accounts"
+  printf "  %-20s %s\n" "worktree [sub]" "Enhanced worktree management"
+  printf "  %-20s %s\n" "update"         "Update ge to the latest version"
+  printf "  %-20s %s\n" "version"        "Show version"
+  printf "  %-20s %s\n" "help"           "Show this help"
+  echo ""
+  echo "$(_ge_bold 'Git Passthrough:')"
+  echo "  Any unrecognized command is passed directly to git."
+  echo "  e.g. 'ge commit -m \"msg\"' → 'git commit -m \"msg\"'"
+  echo ""
+  echo "$(_ge_bold 'Aliases:')"
+  printf "  %-20s %s\n" "wt" "Shorthand for 'worktree'"
+  echo ""
+}
+
+_ge_version() {
+  echo "ge ${GE_VERSION}"
+}
+
+# ── Self-update ──────────────────────────────────────────────
+
+_ge_update() {
+  if [[ -z "$GE_HOME" ]]; then
+    echo "$(_ge_red '✗') GE_HOME is not set."
+    return 1
+  fi
+
+  if [[ ! -d "$GE_HOME/.git" ]]; then
+    # npm install — suggest npm update
+    echo "$(_ge_bold 'Update ge-cli')"
+    echo ""
+    echo "  Installed via npm. Run:"
+    echo "    npm update -g ge-cli"
+    echo ""
+    return 0
+  fi
+
+  echo ""
+  echo "$(_ge_bold 'Update ge-cli')"
+  echo "$(_ge_dim '──────────────────────────────')"
+  printf "  %-10s %s\n" "Path:" "$(_ge_dim "$GE_HOME")"
+  echo ""
+
+  local pull_output
+  pull_output="$(git -C "$GE_HOME" pull 2>&1)"
+  local pull_status=$?
+
+  if [[ $pull_status -ne 0 ]]; then
+    echo "$(_ge_red '✗') git pull failed"
+    echo "$pull_output" | sed 's/^/  /'
+    return $pull_status
+  fi
+
+  if echo "$pull_output" | grep -q "Already up to date"; then
+    echo "$(_ge_green '✔') Already up to date."
+  else
+    echo "$(_ge_green '✔') Updated"
+    echo "$pull_output" | sed 's/^/  /'
+    echo ""
+    echo "  $(_ge_dim 'To apply changes:')"
+    echo "    source ~/.zshrc"
+  fi
+  echo ""
+}
+
+# ── Backward compatibility: gituser command ──────────────────
+
+function gituser() {
+  echo "$(_ge_dim 'Note: gituser is now ge user. Redirecting...')"
+  _ge_user_dispatch "$@"
+}

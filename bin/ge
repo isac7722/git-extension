@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# ============================================================
+# ge — Git Extension CLI (standalone executable)
+# ============================================================
+# This is the PATH-installed binary. It handles:
+#   - ge init <shell>    → outputs shell integration code
+#   - ge version         → prints version
+#   - ge worktree <sub>  → worktree management
+#   - ge <anything>      → git passthrough
+#
+# Commands that modify the current shell environment
+# (ge user <alias>) are handled by the sourced shell function,
+# not this binary.
+# ============================================================
+
+set -e
+
+# ── Resolve GE_HOME (handles symlinks) ───────────────────────
+
+_ge_resolve_home() {
+  local source="${BASH_SOURCE[0]}"
+  # Resolve symlinks
+  while [[ -L "$source" ]]; do
+    local dir="$(cd -P "$(dirname "$source")" && pwd)"
+    source="$(readlink "$source")"
+    # Handle relative symlinks
+    [[ "$source" != /* ]] && source="$dir/$source"
+  done
+  local dir="$(cd -P "$(dirname "$source")" && pwd)"
+  echo "$(cd "$dir/.." && pwd)"
+}
+
+export GE_HOME="${GE_HOME:-$(_ge_resolve_home)}"
+
+# Source core for version
+source "$GE_HOME/lib/_ge_core.sh"
+
+# ── ge init ───────────────────────────────────────────────────
+
+_ge_init() {
+  local shell_type="$1"
+
+  case "$shell_type" in
+    zsh)
+      cat <<EOF
+export GE_HOME="$GE_HOME"
+source "\$GE_HOME/shell/ge.zsh"
+EOF
+      ;;
+    bash)
+      cat <<EOF
+export GE_HOME="$GE_HOME"
+source "\$GE_HOME/shell/ge.bash"
+EOF
+      ;;
+    *)
+      echo "Usage: ge init <zsh|bash>" >&2
+      echo "" >&2
+      echo "Add this to your shell RC file:" >&2
+      echo "  eval \"\$(ge init zsh)\"   # for zsh" >&2
+      echo "  eval \"\$(ge init bash)\"  # for bash" >&2
+      return 1
+      ;;
+  esac
+}
+
+# ── Main dispatch ─────────────────────────────────────────────
+
+case "$1" in
+  init)
+    shift
+    _ge_init "$@"
+    ;;
+  version|--version|-v)
+    echo "ge ${GE_VERSION}"
+    ;;
+  worktree|wt)
+    shift
+    source "$GE_HOME/lib/_ge_worktree.sh"
+    _ge_worktree_dispatch "$@"
+    ;;
+  help|--help|-h|"")
+    cat <<EOF
+
+  ge — Git Extension CLI v${GE_VERSION}
+
+  Usage: ge <command> [args...]
+
+  Commands:
+    init <shell>       Output shell integration code (zsh/bash)
+    user [sub]         Manage git user accounts (requires shell integration)
+    worktree [sub]     Enhanced worktree management
+    update             Update ge to the latest version
+    version            Show version
+    help               Show this help
+
+  Git Passthrough:
+    Any unrecognized command is passed directly to git.
+
+  Setup:
+    Add to your shell RC file:
+      eval "\$(ge init zsh)"    # for zsh
+      eval "\$(ge init bash)"   # for bash
+
+EOF
+    ;;
+  user)
+    echo "Error: 'ge user' requires shell integration." >&2
+    echo "Add this to your shell RC file:" >&2
+    echo "  eval \"\$(ge init zsh)\"" >&2
+    exit 1
+    ;;
+  *)
+    # Git passthrough
+    git "$@"
+    ;;
+esac
