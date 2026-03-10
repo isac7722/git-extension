@@ -45,21 +45,20 @@ _ge_user_switch() {
 _ge_user_list() {
   _ge_load_accounts
 
-  local current_name current_email
-  current_name="$(git config --global user.name 2>/dev/null)"
-  current_email="$(git config --global user.email 2>/dev/null)"
-
-  echo ""
-  echo "$(_ge_bold ' Git User Accounts')"
-  echo "$(_ge_dim '──────────────────────────────────────────────')"
-
   if [[ ${#_GE_ACCOUNTS_RAW[@]} -eq 0 ]]; then
+    echo ""
     echo "  $(_ge_yellow '⚠') No accounts registered."
     echo "  Check $GE_CONFIG or run 'ge user add' to add one."
     echo ""
     return
   fi
 
+  local current_name current_email
+  current_name="$(git config --global user.name 2>/dev/null)"
+  current_email="$(git config --global user.email 2>/dev/null)"
+
+  # Build arrays of display data
+  local profiles=() names=() emails=()
   local entry profile rest name email key_path
   for entry in "${_GE_ACCOUNTS_RAW[@]}"; do
     profile="${entry%%:*}"
@@ -67,27 +66,107 @@ _ge_user_list() {
     name="${rest%%:*}"
     rest="${rest#*:}"
     email="${rest%%:*}"
-    key_path="${rest#*:}"
-
-    local marker="  " label
-    if [[ "$name" == "$current_name" && "$email" == "$current_email" ]]; then
-      marker="$(_ge_green '▶ ')"
-      label="$(_ge_bold "$name")"
-    else
-      label="$name"
-    fi
-
-    printf "%s%-20s %s" "$marker" "$label" "$(_ge_dim "$email")"
-
-    if [[ "$name" == "$current_name" && "$email" == "$current_email" ]]; then
-      printf "  %s" "$(_ge_cyan '← current')"
-    fi
-    echo ""
-    printf "  %s %s\n" "$(_ge_dim 'profile:')" "$(_ge_dim "$profile")"
+    profiles+=("$profile")
+    names+=("$name")
+    emails+=("$email")
   done
 
-  echo "$(_ge_dim '──────────────────────────────────────────────')"
+  local total=${#profiles[@]}
+  local selected=0
+
+  # Find current user index for initial cursor position
+  local i
+  for (( i=0; i<total; i++ )); do
+    if [[ "${names[$i]}" == "$current_name" && "${emails[$i]}" == "$current_email" ]]; then
+      selected=$i
+      break
+    fi
+  done
+
+  # Hide cursor and set up cleanup
+  tput civis 2>/dev/null
+  trap 'tput cnorm 2>/dev/null; trap - INT; return' INT
+
+  _ge_user_list_render() {
+    # Move cursor up to redraw (skip on first render)
+    if [[ "${1:-}" == "redraw" ]]; then
+      # total lines = header(2) + accounts(total*2) + footer(2)
+      local lines_up=$(( 2 + total * 2 + 2 ))
+      printf "\033[%dA" "$lines_up"
+    fi
+
+    echo "$(_ge_bold '  Git User Accounts')"
+    echo "$(_ge_dim '  ──────────────────────────────────────────────')"
+
+    local idx
+    for (( idx=0; idx<total; idx++ )); do
+      local marker="  " label current_mark=""
+
+      if [[ $idx -eq $selected ]]; then
+        marker="$(_ge_cyan '❯ ')"
+        label="$(_ge_bold "${names[$idx]}")"
+      else
+        marker="  "
+        label="${names[$idx]}"
+      fi
+
+      if [[ "${names[$idx]}" == "$current_name" && "${emails[$idx]}" == "$current_email" ]]; then
+        current_mark="  $(_ge_green '✔ current')"
+      fi
+
+      printf "%s%-20s %s%s\n" "$marker" "$label" "$(_ge_dim "${emails[$idx]}")" "$current_mark"
+      printf "    %s %s\n" "$(_ge_dim 'profile:')" "$(_ge_dim "${profiles[$idx]}")"
+    done
+
+    echo "$(_ge_dim '  ──────────────────────────────────────────────')"
+    echo "$(_ge_dim '  ↑↓ navigate  ⏎ select  q cancel')"
+  }
+
+  # Initial render
   echo ""
+  _ge_user_list_render
+
+  # Read input loop
+  local key
+  while true; do
+    # Read a single character (raw mode)
+    IFS= read -rsn1 key
+
+    case "$key" in
+      $'\x1b')
+        # Escape sequence — read next two chars
+        read -rsn2 -t 0.1 key
+        case "$key" in
+          '[A') # Up arrow
+            (( selected > 0 )) && (( selected-- ))
+            ;;
+          '[B') # Down arrow
+            (( selected < total - 1 )) && (( selected++ ))
+            ;;
+        esac
+        ;;
+      'k') # vim up
+        (( selected > 0 )) && (( selected-- ))
+        ;;
+      'j') # vim down
+        (( selected < total - 1 )) && (( selected++ ))
+        ;;
+      ''|$'\n') # Enter
+        tput cnorm 2>/dev/null
+        trap - INT
+        _ge_user_do "${profiles[$selected]}"
+        return
+        ;;
+      'q'|$'\x03') # q or Ctrl-C
+        tput cnorm 2>/dev/null
+        trap - INT
+        echo ""
+        return 0
+        ;;
+    esac
+
+    _ge_user_list_render "redraw"
+  done
 }
 
 # ── Help ─────────────────────────────────────────────────────
