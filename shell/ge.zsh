@@ -149,3 +149,63 @@ function gituser() {
   echo "$(_ge_dim 'Note: gituser is now ge user. Redirecting...')"
   _ge_user_dispatch "$@"
 }
+
+# ── Tab completion ────────────────────────────────────────────
+
+_ge() {
+  local cmd="${words[2]}"
+
+  case $CURRENT in
+    2) # ge <tab>
+      compadd user worktree wt clean update version help
+      ;;
+    3) # ge <cmd> <tab>
+      case "$cmd" in
+        user)
+          compadd list current add set ssh-key migrate help
+          _ge_complete_profiles
+          ;;
+        worktree|wt)
+          compadd add list ls remove rm prune help
+          ;;
+        clean)
+          compadd -- --merged --gone -f --force --dry-run help
+          ;;
+      esac
+      ;;
+    *) # deeper args
+      case "$cmd" in
+        user)
+          case "${words[3]}" in
+            set|ssh-key) _ge_complete_profiles ;;
+          esac
+          ;;
+        worktree|wt)
+          case "${words[3]}" in
+            add)       _ge_complete_branches ;;
+            remove|rm) _ge_complete_branches ;;
+          esac
+          ;;
+        clean)
+          compadd -- --merged --gone -f --force --dry-run
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_ge_complete_profiles() {
+  local config="${GE_CONFIG:-$HOME/.ge/credentials}"
+  [[ -f "$config" ]] || return
+  local -a profiles
+  profiles=(${(f)"$(sed -n 's/^\[\(.*\)\]$/\1/p' "$config")"})
+  compadd "${profiles[@]}"
+}
+
+_ge_complete_branches() {
+  local -a branches
+  branches=(${(f)"$(git branch --list --format='%(refname:short)' 2>/dev/null)"})
+  compadd "${branches[@]}"
+}
+
+compdef _ge ge

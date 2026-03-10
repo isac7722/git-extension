@@ -153,3 +153,66 @@ function gituser() {
   echo "$(_ge_dim 'Note: gituser is now ge user. Redirecting...')"
   _ge_user_dispatch "$@"
 }
+
+# ── Tab completion ────────────────────────────────────────────
+
+_ge_completion() {
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+  local cmd="${COMP_WORDS[1]}"
+
+  case $COMP_CWORD in
+    1)
+      COMPREPLY=($(compgen -W "user worktree wt clean update version help" -- "$cur"))
+      ;;
+    2)
+      case "$cmd" in
+        user)
+          local profiles=$(_ge_comp_profiles)
+          COMPREPLY=($(compgen -W "list current add set ssh-key migrate help $profiles" -- "$cur"))
+          ;;
+        worktree|wt)
+          COMPREPLY=($(compgen -W "add list ls remove rm prune help" -- "$cur"))
+          ;;
+        clean)
+          COMPREPLY=($(compgen -W "--merged --gone -f --force --dry-run help" -- "$cur"))
+          ;;
+      esac
+      ;;
+    *)
+      local subcmd="${COMP_WORDS[2]}"
+      case "$cmd" in
+        user)
+          case "$subcmd" in
+            set|ssh-key)
+              local profiles=$(_ge_comp_profiles)
+              COMPREPLY=($(compgen -W "$profiles" -- "$cur"))
+              ;;
+          esac
+          ;;
+        worktree|wt)
+          case "$subcmd" in
+            add|remove|rm)
+              local branches=$(_ge_comp_branches)
+              COMPREPLY=($(compgen -W "$branches" -- "$cur"))
+              ;;
+          esac
+          ;;
+        clean)
+          COMPREPLY=($(compgen -W "--merged --gone -f --force --dry-run" -- "$cur"))
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_ge_comp_profiles() {
+  local config="${GE_CONFIG:-$HOME/.ge/credentials}"
+  [[ -f "$config" ]] || return
+  sed -n 's/^\[\(.*\)\]$/\1/p' "$config"
+}
+
+_ge_comp_branches() {
+  git branch --list --format='%(refname:short)' 2>/dev/null
+}
+
+complete -F _ge_completion ge
