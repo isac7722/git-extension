@@ -345,6 +345,13 @@ case "$1" in
     ;;
   worktree|wt)
     shift
+    if [[ "$1" == "list" || "$1" == "ls" || -z "$1" ]]; then
+      echo "Error: 'ge worktree list' requires shell integration (for cd)." >&2
+      echo "" >&2
+      echo "  Run 'ge setup' to configure it, or use:" >&2
+      echo "    git worktree list" >&2
+      exit 1
+    fi
     source "$GE_HOME/lib/_ge_worktree.sh"
     _ge_worktree_dispatch "$@"
     ;;

@@ -124,7 +124,7 @@ _ge_user_list() {
     done
 
     printf "  %s\n" "$(_ge_dim '──────────────────────────────────────────────')"
-    printf "  %s\n" "$(_ge_dim '↑↓ navigate  ⏎ select  q cancel')"
+    printf "  %s\n" "$(_ge_dim '↑↓ navigate  ⏎ select  esc/q cancel')"
   }
 
   # Initial render
@@ -157,6 +157,12 @@ _ge_user_list() {
           '[B') # Down arrow
             (( selected < total - 1 )) && (( selected++ ))
             ;;
+          *) # ESC alone or unknown sequence → cancel
+            tput cnorm 2>/dev/null
+            trap - INT
+            echo ""
+            return 0
+            ;;
         esac
         ;;
       'k') # vim up
@@ -171,7 +177,7 @@ _ge_user_list() {
         _ge_user_do "${profiles[$selected]}"
         return
         ;;
-      'q'|$'\x03') # q or Ctrl-C
+      'q'|$'\x03'|$'\x1a') # q, Ctrl-C, Ctrl-Z
         tput cnorm 2>/dev/null
         trap - INT
         echo ""
