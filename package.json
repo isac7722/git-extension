@@ -1,5 +1,5 @@
 {
-  "name": "ge-cli",
+  "name": "git-extension",
   "version": "1.0.0",
   "description": "Git Extension CLI — multi-account management, enhanced worktree, and git passthrough",
   "bin": {

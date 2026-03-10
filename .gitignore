@@ -20,3 +20,6 @@ npm-debug.log*
 .env
 .env.local
 .env.*.local
+
+/.claude
+/.agents
