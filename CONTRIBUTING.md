@@ -55,6 +55,9 @@ ge-cli/
 │   ├── migration/       # Legacy format migration
 │   ├── shell/           # Shell init and wrapper scripts
 │   └── tui/             # Interactive TUI components (Bubble Tea)
+├── scripts/
+│   ├── dev-install.sh   # Local development installer
+│   └── uninstall_legacy.sh  # Legacy uninstaller
 ├── ge-cli-sh/           # Legacy shell implementation (deprecated)
 ├── install.sh           # curl installer
 └── .goreleaser.yml      # Release configuration
