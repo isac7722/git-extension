@@ -51,7 +51,7 @@ func (m ConfirmModel) Confirmed() bool {
 // RunConfirm runs a confirmation prompt.
 func RunConfirm(message string) (bool, error) {
 	m := NewConfirm(message)
-	p := tea.NewProgram(m, tea.WithOutput(os.Stderr))
+	p := tea.NewProgram(m, tea.WithOutput(os.Stderr), tea.WithInputTTY())
 	finalModel, err := p.Run()
 	if err != nil {
 		return false, err

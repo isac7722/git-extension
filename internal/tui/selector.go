@@ -114,7 +114,7 @@ func (m SelectorModel) Chosen() int {
 // RunSelector runs the selector TUI and returns the chosen index.
 func RunSelector(items []SelectorItem, header string) (int, error) {
 	m := NewSelector(items, header)
-	p := tea.NewProgram(m, tea.WithOutput(os.Stderr))
+	p := tea.NewProgram(m, tea.WithOutput(os.Stderr), tea.WithInputTTY())
 	finalModel, err := p.Run()
 	if err != nil {
 		return -1, err
