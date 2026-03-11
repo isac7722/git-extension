@@ -61,7 +61,7 @@ func loadLegacyAccounts(path string) (*config.Config, error) {
 	}
 	defer func() { _ = f.Close() }()
 
-	cfg := &config.Config{}
+	cfg := config.NewConfig()
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())

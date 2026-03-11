@@ -22,6 +22,11 @@ type Config struct {
 	byName   map[string]*Account
 }
 
+// NewConfig creates an empty Config with initialized internal maps.
+func NewConfig() *Config {
+	return &Config{byName: make(map[string]*Account)}
+}
+
 // DefaultPath returns the default credentials file path (~/.ge/credentials).
 func DefaultPath() string {
 	home, _ := os.UserHomeDir()
