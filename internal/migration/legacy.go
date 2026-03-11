@@ -28,42 +28,9 @@ func Migrate() (string, error) {
 	legacyDir := LegacyPath()
 	accountsFile := filepath.Join(legacyDir, "accounts")
 
-	f, err := os.Open(accountsFile)
+	cfg, err := loadLegacyAccounts(accountsFile)
 	if err != nil {
-		return "", fmt.Errorf("no legacy accounts found at %s", accountsFile)
-	}
-	defer func() { _ = f.Close() }()
-
-	cfg := &config.Config{}
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		// Format: aliases:name:email:ssh_key
-		// aliases can be comma-separated (e.g., "work,w")
-		parts := strings.SplitN(line, ":", 4)
-		if len(parts) < 3 {
-			continue
-		}
-
-		aliases := strings.Split(parts[0], ",")
-		profile := strings.TrimSpace(aliases[0])
-		name := strings.TrimSpace(parts[1])
-		email := strings.TrimSpace(parts[2])
-		sshKey := ""
-		if len(parts) > 3 {
-			sshKey = strings.TrimSpace(parts[3])
-		}
-
-		cfg.AddAccount(config.Account{
-			Profile: profile,
-			Name:    name,
-			Email:   email,
-			SSHKey:  sshKey,
-		})
+		return "", err
 	}
 
 	if len(cfg.Accounts) == 0 {
@@ -79,11 +46,55 @@ func Migrate() (string, error) {
 	// Backup legacy directory
 	backupName := fmt.Sprintf("%s.bak.%s", legacyDir, time.Now().Format("20060102"))
 	if err := os.Rename(legacyDir, backupName); err != nil {
-		// Non-fatal: just warn
 		return fmt.Sprintf("Migrated %d accounts to %s\nWarning: could not backup legacy dir: %v",
 			len(cfg.Accounts), credPath, err), nil
 	}
 
 	return fmt.Sprintf("Migrated %d accounts to %s\nLegacy config backed up to %s",
 		len(cfg.Accounts), credPath, backupName), nil
+}
+
+func loadLegacyAccounts(path string) (*config.Config, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("no legacy accounts found at %s", path)
+	}
+	defer func() { _ = f.Close() }()
+
+	cfg := &config.Config{}
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		if acct, ok := parseLegacyAccount(line); ok {
+			cfg.AddAccount(acct)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading legacy config: %w", err)
+	}
+	return cfg, nil
+}
+
+func parseLegacyAccount(line string) (config.Account, bool) {
+	// Format: aliases:name:email:ssh_key
+	parts := strings.SplitN(line, ":", 4)
+	if len(parts) < 3 {
+		return config.Account{}, false
+	}
+
+	aliases := strings.Split(parts[0], ",")
+	sshKey := ""
+	if len(parts) > 3 {
+		sshKey = strings.TrimSpace(parts[3])
+	}
+
+	return config.Account{
+		Profile: strings.TrimSpace(aliases[0]),
+		Name:    strings.TrimSpace(parts[1]),
+		Email:   strings.TrimSpace(parts[2]),
+		SSHKey:  sshKey,
+	}, true
 }

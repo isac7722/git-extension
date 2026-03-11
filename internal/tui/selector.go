@@ -19,11 +19,11 @@ type SelectorItem struct {
 
 // SelectorModel is a single-select list.
 type SelectorModel struct {
-	Items   []SelectorItem
-	cursor  int
-	chosen  int
-	header  string
-	quit    bool
+	Items  []SelectorItem
+	cursor int
+	chosen int
+	header string
+	quit   bool
 }
 
 // NewSelector creates a new selector model.

@@ -9,19 +9,9 @@ import (
 )
 
 func runRemove(args []string) error {
-	// Parse --force/-f flag
-	force := false
-	var branches []string
-	for _, a := range args {
-		if a == "--force" || a == "-f" {
-			force = true
-		} else {
-			branches = append(branches, a)
-		}
-	}
+	force, branches := parseRemoveArgs(args)
 
 	if len(branches) == 0 {
-		// Interactive mode
 		selected, err := selectBranchesToRemove()
 		if err != nil {
 			return err
@@ -32,53 +22,81 @@ func runRemove(args []string) error {
 		branches = selected
 	}
 
-	// Validate and filter
+	valid := filterValidBranches(branches)
+	if len(valid) == 0 {
+		fmt.Fprintln(os.Stderr, "No branches to delete.")
+		return nil
+	}
+
+	if !force {
+		if err := confirmRemoteDeletion(valid); err != nil {
+			if err == errCancelled {
+				return nil
+			}
+			return err
+		}
+	}
+
+	deleteBranches(valid)
+	return nil
+}
+
+func parseRemoveArgs(args []string) (bool, []string) {
+	force := false
+	var branches []string
+	for _, a := range args {
+		if a == "--force" || a == "-f" {
+			force = true
+		} else {
+			branches = append(branches, a)
+		}
+	}
+	return force, branches
+}
+
+func filterValidBranches(branches []string) []string {
 	current, _ := git.CurrentBranch()
 	wtBranches := worktreeBranchSet()
 	var valid []string
 	for _, name := range branches {
 		if name == current {
 			fmt.Fprintf(os.Stderr, "✘ Skipping '%s': current branch\n", name)
-			continue
-		}
-		if git.IsProtected(name) {
+		} else if git.IsProtected(name) {
 			fmt.Fprintf(os.Stderr, "✘ Skipping '%s': protected branch\n", name)
-			continue
-		}
-		if wtBranches[name] {
+		} else if wtBranches[name] {
 			fmt.Fprintf(os.Stderr, "✘ Skipping '%s': checked out in another worktree\n", name)
-			continue
+		} else {
+			valid = append(valid, name)
 		}
-		valid = append(valid, name)
 	}
+	return valid
+}
 
-	if len(valid) == 0 {
-		fmt.Fprintln(os.Stderr, "No branches to delete.")
+func confirmRemoteDeletion(valid []string) error {
+	hasRemote := false
+	for _, name := range valid {
+		if git.HasRemoteBranch(name) {
+			hasRemote = true
+			break
+		}
+	}
+	if !hasRemote {
 		return nil
 	}
-
-	// Check if any have remotes — prompt confirmation if so
-	if !force {
-		hasRemote := false
-		for _, name := range valid {
-			if git.HasRemoteBranch(name) {
-				hasRemote = true
-				break
-			}
-		}
-		if hasRemote {
-			msg := fmt.Sprintf("Delete %d branch(es) including remote?", len(valid))
-			ok, err := tui.RunConfirm(msg)
-			if err != nil {
-				return err
-			}
-			if !ok {
-				return nil
-			}
-		}
+	msg := fmt.Sprintf("Delete %d branch(es) including remote?", len(valid))
+	ok, err := tui.RunConfirm(msg)
+	if err != nil {
+		return err
 	}
+	if !ok {
+		return errCancelled
+	}
+	return nil
+}
 
-	// Delete
+var errCancelled = fmt.Errorf("cancelled")
+
+func deleteBranches(valid []string) {
 	for _, name := range valid {
 		local, remote, err := git.DeleteBranchFull(name)
 		if err != nil {
@@ -88,8 +106,6 @@ func runRemove(args []string) error {
 		scope := locationLabel(local, remote)
 		fmt.Fprintf(os.Stderr, "✔ Deleted %s (%s)\n", name, scope)
 	}
-
-	return nil
 }
 
 func selectBranchesToRemove() ([]string, error) {
@@ -99,6 +115,25 @@ func selectBranchesToRemove() ([]string, error) {
 		return nil, err
 	}
 
+	items, branchNames := buildBranchItems(allBranches)
+	if len(items) == 0 {
+		fmt.Fprintln(os.Stderr, "No deletable branches found.")
+		return nil, nil
+	}
+
+	indices, err := tui.RunMultiSelector(items)
+	if err != nil {
+		return nil, err
+	}
+
+	var selected []string
+	for _, i := range indices {
+		selected = append(selected, branchNames[i])
+	}
+	return selected, nil
+}
+
+func buildBranchItems(allBranches []git.BranchEntry) ([]tui.MultiItem, []string) {
 	current, _ := git.CurrentBranch()
 	wtBranches := worktreeBranchSet()
 
@@ -120,22 +155,7 @@ func selectBranchesToRemove() ([]string, error) {
 		})
 		branchNames = append(branchNames, b.Name)
 	}
-
-	if len(items) == 0 {
-		fmt.Fprintln(os.Stderr, "No deletable branches found.")
-		return nil, nil
-	}
-
-	indices, err := tui.RunMultiSelector(items)
-	if err != nil {
-		return nil, err
-	}
-
-	var selected []string
-	for _, i := range indices {
-		selected = append(selected, branchNames[i])
-	}
-	return selected, nil
+	return items, branchNames
 }
 
 func locationLabel(local, remote bool) string {

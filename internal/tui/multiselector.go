@@ -32,39 +32,34 @@ func NewMultiSelector(items []MultiItem) MultiSelectorModel {
 func (m MultiSelectorModel) Init() tea.Cmd { return nil }
 
 func (m MultiSelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-		case "down", "j":
-			if m.cursor < len(m.Items)-1 {
-				m.cursor++
-			}
-		case " ":
-			m.Items[m.cursor].Checked = !m.Items[m.cursor].Checked
-		case "a":
-			allChecked := true
-			for _, item := range m.Items {
-				if !item.Checked {
-					allChecked = false
-					break
-				}
-			}
-			for i := range m.Items {
-				m.Items[i].Checked = !allChecked
-			}
-		case "enter":
-			m.done = true
-			return m, tea.Quit
-		case "esc", "q", "ctrl+c":
-			m.quit = true
-			return m, tea.Quit
-		}
+	keyMsg, ok := msg.(tea.KeyMsg)
+	if !ok {
+		return m, nil
+	}
+	switch keyMsg.String() {
+	case "up", "k":
+		m.moveCursor(-1)
+	case "down", "j":
+		m.moveCursor(1)
+	case " ":
+		m.Items[m.cursor].Checked = !m.Items[m.cursor].Checked
+	case "a":
+		toggleAll(m.Items)
+	case "enter":
+		m.done = true
+		return m, tea.Quit
+	case "esc", "q", "ctrl+c":
+		m.quit = true
+		return m, tea.Quit
 	}
 	return m, nil
+}
+
+func (m *MultiSelectorModel) moveCursor(delta int) {
+	next := m.cursor + delta
+	if next >= 0 && next < len(m.Items) {
+		m.cursor = next
+	}
 }
 
 func (m MultiSelectorModel) View() string {
@@ -108,6 +103,19 @@ func (m MultiSelectorModel) View() string {
 	)))
 
 	return sb.String()
+}
+
+func toggleAll(items []MultiItem) {
+	allChecked := true
+	for _, item := range items {
+		if !item.Checked {
+			allChecked = false
+			break
+		}
+	}
+	for i := range items {
+		items[i].Checked = !allChecked
+	}
 }
 
 // SelectedIndices returns indices of checked items, or nil if cancelled.

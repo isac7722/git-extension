@@ -27,38 +27,13 @@ If arguments are omitted, an interactive selector is shown.`,
 }
 
 func runPR(cmd *cobra.Command, args []string) error {
-	var head, base string
-
-	switch len(args) {
-	case 2:
-		head = args[0]
-		base = args[1]
-	case 1:
-		head = args[0]
-	case 0:
-		// head defaults to current branch
-		cur, err := git.CurrentBranch()
-		if err != nil {
-			return fmt.Errorf("failed to detect current branch: %w", err)
-		}
-		head = cur
-	}
-
-	// Resolve base if not specified
-	if base == "" {
-		def := git.DefaultBranch()
-		if len(args) == 0 {
-			// Both omitted: use default branch as base
-			base = def
-		} else {
-			// head specified but no base: let user pick or use default
-			base = def
-		}
+	head, base, err := resolveHeadBase(args)
+	if err != nil {
+		return err
 	}
 
 	fmt.Fprintf(os.Stderr, "Creating PR: %s → %s\n", head, base)
 
-	// Ensure head branch is pushed to remote
 	if err := ensurePushed(head); err != nil {
 		return err
 	}
@@ -83,7 +58,31 @@ func runPR(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Create PR via gh CLI
+	return createPR(head, base, title, body)
+}
+
+func resolveHeadBase(args []string) (string, string, error) {
+	var head, base string
+	switch len(args) {
+	case 2:
+		head = args[0]
+		base = args[1]
+	case 1:
+		head = args[0]
+	case 0:
+		cur, err := git.CurrentBranch()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to detect current branch: %w", err)
+		}
+		head = cur
+	}
+	if base == "" {
+		base = git.DefaultBranch()
+	}
+	return head, base, nil
+}
+
+func createPR(head, base, title, body string) error {
 	ghArgs := []string{
 		"pr", "create",
 		"--head", head,
@@ -109,7 +108,6 @@ func runPR(cmd *cobra.Command, args []string) error {
 	if url != "" {
 		fmt.Fprintf(os.Stderr, "✔ Pull request created: %s\n", url)
 	}
-
 	return nil
 }
 

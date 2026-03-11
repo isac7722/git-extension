@@ -71,15 +71,7 @@ func selectBranch() (string, error) {
 	}
 
 	if len(items) == 0 {
-		// Allow creating a new branch by prompting
-		name, ok, err := tui.RunPrompt("New branch name:", "feature/my-feature")
-		if err != nil {
-			return "", err
-		}
-		if !ok {
-			return "", nil
-		}
-		return name, nil
+		return promptNewBranch()
 	}
 
 	// Add "create new branch" option at the top
@@ -98,15 +90,19 @@ func selectBranch() (string, error) {
 	}
 
 	if items[idx].Value == "__new__" {
-		name, ok, err := tui.RunPrompt("New branch name:", "feature/my-feature")
-		if err != nil {
-			return "", err
-		}
-		if !ok {
-			return "", nil
-		}
-		return name, nil
+		return promptNewBranch()
 	}
 
 	return items[idx].Value, nil
+}
+
+func promptNewBranch() (string, error) {
+	name, ok, err := tui.RunPrompt("New branch name:", "feature/my-feature")
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return "", nil
+	}
+	return name, nil
 }

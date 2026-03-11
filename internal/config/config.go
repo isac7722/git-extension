@@ -59,28 +59,31 @@ func Load(path string) (*Config, error) {
 		}
 
 		// Key = Value
-		if current == nil {
-			continue
-		}
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			continue
-		}
-		key := strings.TrimSpace(parts[0])
-		val := strings.TrimSpace(parts[1])
-		val = expandHome(val)
-
-		switch key {
-		case "name":
-			current.Name = val
-		case "email":
-			current.Email = val
-		case "ssh_key":
-			current.SSHKey = val
+		if current != nil {
+			parseConfigLine(current, line)
 		}
 	}
 
 	return cfg, scanner.Err()
+}
+
+func parseConfigLine(current *Account, line string) {
+	parts := strings.SplitN(line, "=", 2)
+	if len(parts) != 2 {
+		return
+	}
+	key := strings.TrimSpace(parts[0])
+	val := strings.TrimSpace(parts[1])
+	val = expandHome(val)
+
+	switch key {
+	case "name":
+		current.Name = val
+	case "email":
+		current.Email = val
+	case "ssh_key":
+		current.SSHKey = val
+	}
 }
 
 // Get returns an account by profile name.
