@@ -1,0 +1,45 @@
+version: 2
+
+builds:
+  - main: ./cmd/ge
+    binary: ge
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - formats: ['tar.gz']
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+brews:
+  - repository:
+      owner: isac7722
+      name: homebrew-ge
+    directory: Formula
+    homepage: "https://github.com/isac7722/ge-cli"
+    description: "Git Extension CLI — multi-account, worktree, and branch management"
+    install: |
+      bin.install "ge"
+    test: |
+      system "#{bin}/ge", "version"
