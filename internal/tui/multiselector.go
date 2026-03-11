@@ -93,7 +93,7 @@ func (m MultiSelectorModel) View() string {
 			hint = "  " + Dim.Render(item.Hint)
 		}
 
-		sb.WriteString(fmt.Sprintf("%s%s %s%s\n", cursor, check, label, hint))
+		fmt.Fprintf(&sb, "%s%s %s%s\n", cursor, check, label, hint)
 	}
 
 	count := 0
@@ -103,9 +103,9 @@ func (m MultiSelectorModel) View() string {
 		}
 	}
 
-	sb.WriteString(fmt.Sprintf("\n%s\n", Dim.Render(fmt.Sprintf(
+	fmt.Fprintf(&sb, "\n%s\n", Dim.Render(fmt.Sprintf(
 		"↑↓/jk: move  ␣: toggle  a: all  ⏎: confirm (%d selected)  esc/q: cancel", count,
-	))))
+	)))
 
 	return sb.String()
 }

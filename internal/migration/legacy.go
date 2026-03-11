@@ -32,7 +32,7 @@ func Migrate() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("no legacy accounts found at %s", accountsFile)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	cfg := &config.Config{}
 	scanner := bufio.NewScanner(f)

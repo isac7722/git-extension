@@ -11,17 +11,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	versionStr = "dev"
-	commitStr  = "none"
-	dateStr    = "unknown"
-)
+var versionStr = "dev"
 
 // SetVersionInfo sets version info from ldflags.
-func SetVersionInfo(version, commit, date string) {
+func SetVersionInfo(version, _, _ string) {
 	versionStr = version
-	commitStr = commit
-	dateStr = date
 }
 
 var rootCmd = &cobra.Command{
