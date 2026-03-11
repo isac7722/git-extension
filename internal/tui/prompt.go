@@ -51,7 +51,7 @@ func (m PromptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m PromptModel) View() string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("%s %s\n", Cyan.Render("?"), Bold.Render(m.label)))
+	fmt.Fprintf(&sb, "%s %s\n", Cyan.Render("?"), Bold.Render(m.label))
 	sb.WriteString(m.input.View())
 	return sb.String()
 }

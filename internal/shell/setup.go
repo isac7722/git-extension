@@ -32,7 +32,7 @@ eval "$(command ge init %s)"
 	if err != nil {
 		return "", fmt.Errorf("failed to open %s: %w", rcPath, err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	if _, err := f.WriteString(block); err != nil {
 		return "", fmt.Errorf("failed to write to %s: %w", rcPath, err)
