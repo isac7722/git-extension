@@ -130,7 +130,7 @@ fi
 log "Latest version: $LATEST_TAG"
 
 VERSION="${LATEST_TAG#v}"
-ARCHIVE_NAME="ge-cli_${VERSION}_${PLATFORM}.tar.gz"
+ARCHIVE_NAME="git-extension_${VERSION}_${PLATFORM}.tar.gz"
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${LATEST_TAG}/${ARCHIVE_NAME}"
 
 log "Downloading ${ARCHIVE_NAME}..."

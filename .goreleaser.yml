@@ -1,5 +1,7 @@
 version: 2
 
+project_name: git-extension
+
 builds:
   - main: ./cmd/ge
     binary: ge
