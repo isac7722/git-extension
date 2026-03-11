@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/isac7722/git-extension/compare/v2.0.1...v2.0.2) (2026-03-11)
+
+
+### Bug Fixes
+
+* **install:** correct usage URL in install.sh comment ([0fa6ebd](https://github.com/isac7722/git-extension/commit/0fa6ebd86ea05bff762eea2cc80400f325c134e7))
+
 ## [2.0.1](https://github.com/isac7722/git-extension/compare/v2.0.0...v2.0.1) (2026-03-11)
 
 
