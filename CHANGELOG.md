@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.0](https://github.com/isac7722/git-extension/compare/v1.1.0...v1.2.0) (2026-03-11)
+
+
+### Features
+
+* **branch:** add interactive branch switcher with `ge branch` ([01d2851](https://github.com/isac7722/git-extension/commit/01d285124cc21bf43b31d2afadd39f737be909f5))
+* **pr:** add `ge pr` command for creating GitHub pull requests ([a301505](https://github.com/isac7722/git-extension/commit/a30150511e3f236006551dfcd36da3f501a8ca23))
+* **pr:** add `ge pr` command for creating GitHub pull requests ([ee194fd](https://github.com/isac7722/git-extension/commit/ee194fd36325085b2bd867c49d0c64d33b15b490))
+
 ## [1.1.0](https://github.com/isac7722/git-extension/compare/v1.0.0...v1.1.0) (2026-03-11)
 
 
