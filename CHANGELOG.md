@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/isac7722/git-extension/compare/v2.0.0...v2.0.1) (2026-03-11)
+
+
+### Bug Fixes
+
+* **release:** align project name and asset prefix with git-extension ([43d9bf4](https://github.com/isac7722/git-extension/commit/43d9bf49fb87db5a7b87ef04ff92b429c2240dcb))
+
 ## [2.0.0](https://github.com/isac7722/git-extension/compare/v1.2.0...v2.0.0) (2026-03-11)
 
 
