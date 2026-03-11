@@ -3,7 +3,7 @@ package user
 import (
 	"fmt"
 
-	"github.com/isac7722/ge-cli/internal/git"
+	"github.com/isac7722/git-extension/internal/git"
 	"github.com/spf13/cobra"
 )
 

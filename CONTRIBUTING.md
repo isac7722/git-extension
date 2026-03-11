@@ -13,7 +13,7 @@ Thanks for your interest in contributing! This guide will help you get started.
 ### Setup
 
 ```bash
-git clone https://github.com/isac7722/ge-cli.git
+git clone https://github.com/isac7722/git-extension.git
 cd ge-cli
 go mod download
 ```

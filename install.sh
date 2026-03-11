@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
 # git-extension installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/isac7722/ge-cli/main/ge-cli-go/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/isac7722/git-extension/main/ge-cli-go/install.sh | bash
 #
 # Downloads the latest ge binary from GitHub Releases.
 # ============================================================
 
 set -e
 
-REPO="isac7722/ge-cli"
+REPO="isac7722/git-extension"
 INSTALL_DIR="${GE_INSTALL_DIR:-/usr/local/bin}"
 GE_CONFIG_DIR="$HOME/.ge"
 

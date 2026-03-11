@@ -1,4 +1,4 @@
-module github.com/isac7722/ge-cli
+module github.com/isac7722/git-extension
 
 go 1.26.1
 

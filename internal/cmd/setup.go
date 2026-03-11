@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/isac7722/ge-cli/internal/shell"
+	"github.com/isac7722/git-extension/internal/shell"
 	"github.com/spf13/cobra"
 )
 

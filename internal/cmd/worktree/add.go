@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/isac7722/ge-cli/internal/git"
-	"github.com/isac7722/ge-cli/internal/tui"
+	"github.com/isac7722/git-extension/internal/git"
+	"github.com/isac7722/git-extension/internal/tui"
 	"github.com/spf13/cobra"
 )
 

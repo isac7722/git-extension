@@ -3,7 +3,7 @@ package user
 import (
 	"fmt"
 
-	"github.com/isac7722/ge-cli/internal/migration"
+	"github.com/isac7722/git-extension/internal/migration"
 	"github.com/spf13/cobra"
 )
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/isac7722/ge-cli/internal/config"
+	"github.com/isac7722/git-extension/internal/config"
 )
 
 // LegacyPath returns the path to the old gituser config directory.

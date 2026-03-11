@@ -5,12 +5,12 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/isac7722/ge-cli/internal/cmd/branch"
-	"github.com/isac7722/ge-cli/internal/cmd/clean"
-	"github.com/isac7722/ge-cli/internal/cmd/fetch"
-	"github.com/isac7722/ge-cli/internal/cmd/pr"
-	"github.com/isac7722/ge-cli/internal/cmd/user"
-	"github.com/isac7722/ge-cli/internal/cmd/worktree"
+	"github.com/isac7722/git-extension/internal/cmd/branch"
+	"github.com/isac7722/git-extension/internal/cmd/clean"
+	"github.com/isac7722/git-extension/internal/cmd/fetch"
+	"github.com/isac7722/git-extension/internal/cmd/pr"
+	"github.com/isac7722/git-extension/internal/cmd/user"
+	"github.com/isac7722/git-extension/internal/cmd/worktree"
 	"github.com/spf13/cobra"
 )
 
