@@ -11,10 +11,10 @@ import (
 
 // PromptModel handles text input.
 type PromptModel struct {
-	input    textinput.Model
-	label    string
-	quit     bool
-	done     bool
+	input textinput.Model
+	label string
+	quit  bool
+	done  bool
 }
 
 // NewPrompt creates a new text prompt.
