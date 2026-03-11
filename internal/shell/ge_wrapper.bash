@@ -41,6 +41,9 @@ _ge_completion() {
         worktree|wt)
           COMPREPLY=($(compgen -W "add list ls remove rm prune help" -- "$cur"))
           ;;
+        branch)
+          COMPREPLY=($(compgen -W "remove rm" -- "$cur"))
+          ;;
       esac
       ;;
   esac

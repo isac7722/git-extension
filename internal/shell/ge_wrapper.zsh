@@ -20,10 +20,11 @@ function ge() {
 
 # Completion
 function _ge() {
-  local -a commands user_commands worktree_commands
+  local -a commands user_commands worktree_commands branch_commands
   commands=(user worktree wt clean branch version help)
   user_commands=(list current add set ssh-key migrate help)
   worktree_commands=(add list ls remove rm prune help)
+  branch_commands=(remove rm)
 
   case "$CURRENT" in
     2)
@@ -45,6 +46,7 @@ function _ge() {
           fi
           ;;
         worktree|wt) compadd -a worktree_commands ;;
+        branch) compadd -a branch_commands ;;
       esac
       ;;
   esac

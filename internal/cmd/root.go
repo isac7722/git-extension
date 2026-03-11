@@ -7,6 +7,7 @@ import (
 
 	"github.com/isac7722/ge-cli/internal/cmd/branch"
 	"github.com/isac7722/ge-cli/internal/cmd/clean"
+	"github.com/isac7722/ge-cli/internal/cmd/fetch"
 	"github.com/isac7722/ge-cli/internal/cmd/pr"
 	"github.com/isac7722/ge-cli/internal/cmd/user"
 	"github.com/isac7722/ge-cli/internal/cmd/worktree"
@@ -64,6 +65,7 @@ func init() {
 	rootCmd.AddCommand(clean.Cmd)
 	rootCmd.AddCommand(branch.Cmd)
 	rootCmd.AddCommand(pr.Cmd)
+	rootCmd.AddCommand(fetch.Cmd)
 
 	// "wt" alias for worktree
 	wtCmd := *worktree.Cmd

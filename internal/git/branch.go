@@ -1,6 +1,7 @@
 package git
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -247,6 +248,40 @@ func DeleteBranch(name string, force bool) error {
 	}
 	_, err := Run("branch", flag, name)
 	return err
+}
+
+// HasRemoteBranch checks if a branch exists on origin.
+func HasRemoteBranch(name string) bool {
+	_, err := Run("rev-parse", "--verify", "refs/remotes/origin/"+name)
+	return err == nil
+}
+
+// DeleteBranchFull deletes a branch locally and/or remotely.
+// Returns (deletedLocal, deletedRemote, error).
+func DeleteBranchFull(name string) (bool, bool, error) {
+	var deletedLocal, deletedRemote bool
+
+	// Delete local if exists
+	if _, err := Run("rev-parse", "--verify", "refs/heads/"+name); err == nil {
+		if err := DeleteBranch(name, true); err != nil {
+			return false, false, fmt.Errorf("failed to delete local branch '%s': %w", name, err)
+		}
+		deletedLocal = true
+	}
+
+	// Delete remote if exists
+	if HasRemoteBranch(name) {
+		if _, err := Run("push", "origin", "--delete", name); err != nil {
+			return deletedLocal, false, fmt.Errorf("failed to delete remote branch '%s': %w", name, err)
+		}
+		deletedRemote = true
+	}
+
+	if !deletedLocal && !deletedRemote {
+		return false, false, fmt.Errorf("branch '%s' not found", name)
+	}
+
+	return deletedLocal, deletedRemote, nil
 }
 
 // worktreeBranches returns a set of branch names checked out in worktrees.

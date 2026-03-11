@@ -16,10 +16,13 @@ var Cmd = &cobra.Command{
 	Short:              "Interactive branch switcher",
 	DisableFlagParsing: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 0 {
-			return gitBranchPassthrough(args)
+		if len(args) == 0 {
+			return runInteractiveBranch()
 		}
-		return runInteractiveBranch()
+		if args[0] == "remove" || args[0] == "rm" {
+			return runRemove(args[1:])
+		}
+		return gitBranchPassthrough(args)
 	},
 }
 
