@@ -112,6 +112,6 @@ var updateCmd = &cobra.Command{
 		}
 
 		fmt.Printf("✔ Updated profile %q (%s <%s>)\n", newProfile, name, email)
-		return nil
+		return doSwitch(&updated, true)
 	},
 }
