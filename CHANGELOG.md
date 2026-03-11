@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/isac7722/git-extension/compare/v1.2.0...v2.0.0) (2026-03-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename Go module from ge-cli to git-extension
+
+### Code Refactoring
+
+* rename Go module from ge-cli to git-extension ([6ad3d65](https://github.com/isac7722/git-extension/commit/6ad3d65bbe0a7705a471541da60c554786df13a6))
+
 ## [1.2.0](https://github.com/isac7722/git-extension/compare/v1.1.0...v1.2.0) (2026-03-11)
 
 
