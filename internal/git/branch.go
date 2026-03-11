@@ -4,6 +4,103 @@ import (
 	"strings"
 )
 
+// BranchEntry holds branch metadata for the branch switcher.
+type BranchEntry struct {
+	Name       string
+	IsLocal    bool   // exists in refs/heads/
+	IsRemote   bool   // exists in refs/remotes/origin/
+	IsCurrent  bool
+	IsWorktree bool   // checked out in another worktree
+	Date       string // relative date (e.g., "3 days ago")
+}
+
+// AllBranches returns all local and remote branches sorted for the interactive switcher.
+// Order: current → local+remote → local-only → remote-only (each group by committerdate).
+func AllBranches() ([]BranchEntry, error) {
+	current, _ := CurrentBranch()
+	wtBranches := worktreeBranches()
+
+	// Local branches with upstream info
+	localOut, err := Run("for-each-ref", "--format=%(refname:short)\t%(upstream)\t%(committerdate:relative)", "--sort=-committerdate", "refs/heads/")
+	if err != nil {
+		return nil, err
+	}
+
+	localSet := make(map[string]bool)
+	var currentEntry *BranchEntry
+	var localRemote, localOnly []BranchEntry
+
+	for _, line := range strings.Split(localOut, "\n") {
+		if line == "" {
+			continue
+		}
+		parts := strings.SplitN(line, "\t", 3)
+		name := parts[0]
+		upstream := ""
+		date := ""
+		if len(parts) > 1 {
+			upstream = parts[1]
+		}
+		if len(parts) > 2 {
+			date = parts[2]
+		}
+		localSet[name] = true
+
+		entry := BranchEntry{
+			Name:       name,
+			IsLocal:    true,
+			IsRemote:   upstream != "",
+			IsCurrent:  name == current,
+			IsWorktree: wtBranches[name] && name != current,
+			Date:       date,
+		}
+
+		if entry.IsCurrent {
+			currentEntry = &entry
+		} else if entry.IsRemote {
+			localRemote = append(localRemote, entry)
+		} else {
+			localOnly = append(localOnly, entry)
+		}
+	}
+
+	// Remote branches (only those not already local)
+	remoteOut, _ := Run("for-each-ref", "--format=%(refname:short)\t%(committerdate:relative)", "--sort=-committerdate", "refs/remotes/origin/")
+	var remoteOnly []BranchEntry
+	for _, line := range strings.Split(remoteOut, "\n") {
+		if line == "" {
+			continue
+		}
+		parts := strings.SplitN(line, "\t", 2)
+		fullName := parts[0]
+		date := ""
+		if len(parts) > 1 {
+			date = parts[1]
+		}
+		// Strip "origin/" prefix
+		name := strings.TrimPrefix(fullName, "origin/")
+		if name == "HEAD" || name == fullName || localSet[name] {
+			continue
+		}
+		remoteOnly = append(remoteOnly, BranchEntry{
+			Name:     name,
+			IsRemote: true,
+			Date:     date,
+		})
+	}
+
+	// Assemble: current → local+remote → local-only → remote-only
+	var result []BranchEntry
+	if currentEntry != nil {
+		result = append(result, *currentEntry)
+	}
+	result = append(result, localRemote...)
+	result = append(result, localOnly...)
+	result = append(result, remoteOnly...)
+
+	return result, nil
+}
+
 // BranchInfo holds branch metadata for clean command.
 type BranchInfo struct {
 	Name   string

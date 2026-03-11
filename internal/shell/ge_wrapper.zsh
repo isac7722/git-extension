@@ -21,7 +21,7 @@ function ge() {
 # Completion
 function _ge() {
   local -a commands user_commands worktree_commands
-  commands=(user worktree wt clean version help)
+  commands=(user worktree wt clean branch version help)
   user_commands=(list current add set ssh-key migrate help)
   worktree_commands=(add list ls remove rm prune help)
 

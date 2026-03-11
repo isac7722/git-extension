@@ -10,10 +10,11 @@ import (
 
 // SelectorItem represents an item in the selector.
 type SelectorItem struct {
-	Label    string
-	Value    string
-	Hint     string // shown dimmed after label
-	Selected bool   // pre-selected marker (e.g., current user)
+	Label         string
+	Value         string
+	Hint          string // shown dimmed after label
+	FormattedHint string // pre-formatted hint (bypasses default dim styling)
+	Selected      bool   // pre-selected marker (e.g., current user)
 }
 
 // SelectorModel is a single-select list.
@@ -86,7 +87,9 @@ func (m SelectorModel) View() string {
 		}
 
 		hint := ""
-		if item.Hint != "" {
+		if item.FormattedHint != "" {
+			hint = " " + item.FormattedHint
+		} else if item.Hint != "" {
 			hint = " " + Dim.Render(item.Hint)
 		}
 

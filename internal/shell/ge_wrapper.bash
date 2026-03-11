@@ -27,7 +27,7 @@ _ge_completion() {
 
   case "$COMP_CWORD" in
     1)
-      COMPREPLY=($(compgen -W "user worktree wt clean version help $(git help -a 2>/dev/null | grep '^  ' | awk '{print $1}')" -- "$cur"))
+      COMPREPLY=($(compgen -W "user worktree wt clean branch version help $(git help -a 2>/dev/null | grep '^  ' | awk '{print $1}')" -- "$cur"))
       ;;
     2)
       case "$prev" in
