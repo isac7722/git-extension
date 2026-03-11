@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/isac7722/ge-cli/internal/config"
 	"github.com/isac7722/ge-cli/internal/tui"
@@ -111,7 +112,7 @@ var updateCmd = &cobra.Command{
 			return fmt.Errorf("failed to save credentials: %w", err)
 		}
 
-		fmt.Printf("✔ Updated profile %q (%s <%s>)\n", newProfile, name, email)
+		fmt.Fprintf(os.Stderr, "✔ Updated profile %q (%s <%s>)\n", newProfile, name, email)
 		return doSwitch(&updated, true)
 	},
 }

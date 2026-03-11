@@ -142,6 +142,28 @@ func LocalOnlyBranches() ([]BranchInfo, error) {
 	return branches, nil
 }
 
+// LocalBranches returns all local branch names.
+func LocalBranches() ([]string, error) {
+	out, err := Run("for-each-ref", "--format=%(refname:short)", "refs/heads/")
+	if err != nil {
+		return nil, err
+	}
+	var branches []string
+	for _, line := range strings.Split(out, "\n") {
+		name := strings.TrimSpace(line)
+		if name != "" {
+			branches = append(branches, name)
+		}
+	}
+	return branches, nil
+}
+
+// BranchExists checks if a local branch exists.
+func BranchExists(name string) bool {
+	_, err := Run("rev-parse", "--verify", "refs/heads/"+name)
+	return err == nil
+}
+
 // DeleteBranch deletes a local branch. Use force for unmerged branches.
 func DeleteBranch(name string, force bool) error {
 	flag := "-d"
