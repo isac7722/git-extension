@@ -1,6 +1,6 @@
 {
   "name": "git-extension",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Git Extension CLI — multi-account management, enhanced worktree, and git passthrough",
   "bin": {
     "ge": "./bin/ge"
@@ -12,7 +12,8 @@
     "bin/",
     "lib/",
     "shell/",
-    "config/"
+    "config/",
+    "scripts/"
   ],
   "os": [
     "darwin",
