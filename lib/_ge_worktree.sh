@@ -195,6 +195,7 @@ _ge_worktree_list() {
 
   local paths=() branches=() hashes=() statuses=()
   local line wt_path wt_hash wt_branch_raw wt_branch
+  local _dirty _ahead _behind _status_str _counts _behind_n _ahead_n
   while IFS= read -r line; do
     read -r wt_path wt_hash wt_branch_raw <<< "$line"
     # Strip brackets: [main] → main
@@ -205,13 +206,11 @@ _ge_worktree_list() {
     branches+=("$wt_branch")
 
     # Collect dirty / ahead / behind status
-    local _dirty="" _ahead="" _behind="" _status_str=""
+    _dirty="" _ahead="" _behind="" _status_str=""
     if [[ -n "$(git -C "$wt_path" status --porcelain 2>/dev/null)" ]]; then
       _dirty="*"
     fi
-    local _counts
     if _counts="$(git -C "$wt_path" rev-list --left-right --count @{upstream}...HEAD 2>/dev/null)"; then
-      local _behind_n _ahead_n
       read -r _behind_n _ahead_n <<< "$_counts"
       (( _ahead_n > 0 )) && _ahead="↑${_ahead_n}"
       (( _behind_n > 0 )) && _behind="↓${_behind_n}"
