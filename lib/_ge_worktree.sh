@@ -193,7 +193,7 @@ _ge_worktree_list() {
     return 1
   fi
 
-  local paths=() branches=() hashes=()
+  local paths=() branches=() hashes=() statuses=()
   local line wt_path wt_hash wt_branch_raw wt_branch
   while IFS= read -r line; do
     read -r wt_path wt_hash wt_branch_raw <<< "$line"
@@ -203,6 +203,24 @@ _ge_worktree_list() {
     paths+=("$wt_path")
     hashes+=("$wt_hash")
     branches+=("$wt_branch")
+
+    # Collect dirty / ahead / behind status
+    local _dirty="" _ahead="" _behind="" _status_str=""
+    if [[ -n "$(git -C "$wt_path" status --porcelain 2>/dev/null)" ]]; then
+      _dirty="*"
+    fi
+    local _counts
+    if _counts="$(git -C "$wt_path" rev-list --left-right --count @{upstream}...HEAD 2>/dev/null)"; then
+      local _behind_n _ahead_n
+      read -r _behind_n _ahead_n <<< "$_counts"
+      (( _ahead_n > 0 )) && _ahead="↑${_ahead_n}"
+      (( _behind_n > 0 )) && _behind="↓${_behind_n}"
+    fi
+    _status_str="${_dirty}${_ahead}${_behind}"
+    if [[ -z "$_status_str" ]]; then
+      _status_str="✔"
+    fi
+    statuses+=("$_status_str")
   done < <(git worktree list)
 
   local total=${#paths[@]}
@@ -231,7 +249,7 @@ _ge_worktree_list() {
 
   _ge_worktree_list_render() {
     if [[ "${1:-}" == "redraw" ]]; then
-      local lines_up=$(( 2 + total + 2 ))
+      local lines_up=$(( 2 + total + 3 ))
       printf "\033[%dA\033[J" "$lines_up"
     fi
 
@@ -253,6 +271,14 @@ _ge_worktree_list() {
         printf "    %s%s%s" "$branch_display" "$padding" "$(_ge_dim "$path_display")"
       fi
 
+      # Status indicator (dirty / ahead / behind)
+      local status_str="${statuses[$idx]}"
+      if [[ "$status_str" == "✔" ]]; then
+        printf "  %s" "$(_ge_green '✔')"
+      else
+        printf "  %s" "$(_ge_yellow "$status_str")"
+      fi
+
       if [[ "$current_path" == "${paths[$idx]}"* ]]; then
         printf "  %s" "$(_ge_green '✔ here')"
       fi
@@ -261,6 +287,7 @@ _ge_worktree_list() {
 
     printf "  %s\n" "$(_ge_dim '──────────────────────────────────────────────')"
     printf "  %s\n" "$(_ge_dim '↑↓ navigate  ⏎ select  esc/q cancel')"
+    printf "  %s\n" "$(_ge_dim '✔ clean  * uncommitted  ↑ ahead  ↓ behind')"
   }
 
   # Initial render
