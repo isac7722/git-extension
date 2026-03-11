@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/isac7722/git-extension/compare/v1.0.0...v1.1.0) (2026-03-11)
+
+
+### Features
+
+* **user:** add `ge user update` command for editing profiles ([f5dc9b2](https://github.com/isac7722/git-extension/commit/f5dc9b23e7b6507542699f13690cdf63d9c6884e))
+* **user:** auto-apply profile after `ge user update` ([b00e6d7](https://github.com/isac7722/git-extension/commit/b00e6d7926e8df770218de2728c9207c38ed015e))
+
 ## 1.0.0 (2026-03-11)
 
 
