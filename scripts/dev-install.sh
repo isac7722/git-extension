@@ -2,10 +2,11 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 INSTALL_DIR="${GE_INSTALL_DIR:-/usr/local/bin}"
 
 echo "==> Building ge..."
-cd "$SCRIPT_DIR"
+cd "$PROJECT_DIR"
 go build -o ge ./cmd/ge/
 
 echo "==> Installing to $INSTALL_DIR/ge..."

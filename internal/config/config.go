@@ -131,6 +131,20 @@ func (c *Config) AddAccount(a Account) {
 	c.byName[a.Profile] = &c.Accounts[len(c.Accounts)-1]
 }
 
+// UpdateAccount updates an existing account by profile name and returns true if found.
+// If updated.Profile differs from profile, the profile is renamed.
+func (c *Config) UpdateAccount(profile string, updated Account) bool {
+	for i, a := range c.Accounts {
+		if a.Profile == profile {
+			c.Accounts[i] = updated
+			delete(c.byName, profile)
+			c.byName[updated.Profile] = &c.Accounts[i]
+			return true
+		}
+	}
+	return false
+}
+
 func expandHome(path string) string {
 	if strings.HasPrefix(path, "~/") {
 		home, _ := os.UserHomeDir()

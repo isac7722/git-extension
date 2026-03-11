@@ -28,6 +28,7 @@ func init() {
 	Cmd.AddCommand(switchCmd)
 	Cmd.AddCommand(migrateCmd)
 	Cmd.AddCommand(removeCmd)
+	Cmd.AddCommand(updateCmd)
 }
 
 func loadConfig() (*config.Config, error) {

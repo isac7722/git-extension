@@ -64,6 +64,22 @@ func (m PromptModel) Value() string {
 	return m.input.Value()
 }
 
+// RunPromptWithValue runs a text prompt with a pre-filled value and returns the entered value.
+func RunPromptWithValue(label, placeholder, value string) (string, bool, error) {
+	m := NewPrompt(label, placeholder)
+	m.input.SetValue(value)
+	p := tea.NewProgram(m, tea.WithOutput(os.Stderr))
+	finalModel, err := p.Run()
+	if err != nil {
+		return "", false, err
+	}
+	result := finalModel.(PromptModel)
+	if result.quit {
+		return "", false, nil
+	}
+	return result.Value(), true, nil
+}
+
 // RunPrompt runs a text prompt and returns the entered value.
 func RunPrompt(label, placeholder string) (string, bool, error) {
 	m := NewPrompt(label, placeholder)
