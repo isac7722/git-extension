@@ -33,7 +33,8 @@ changelog:
       - "^chore:"
 
 brews:
-  - repository:
+  - name: ge
+    repository:
       owner: isac7722
       name: homebrew-ge
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
