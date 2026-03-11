@@ -95,7 +95,7 @@ func (m SelectorModel) View() string {
 			marker = " " + Green.Render("✔")
 		}
 
-		sb.WriteString(fmt.Sprintf("%s%s%s%s\n", cursor, label, hint, marker))
+		fmt.Fprintf(&sb, "%s%s%s%s\n", cursor, label, hint, marker)
 	}
 
 	sb.WriteString("\n" + Dim.Render("↑↓/jk: move  ⏎: select  esc/q: cancel"))

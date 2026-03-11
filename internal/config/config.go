@@ -101,11 +101,11 @@ func (c *Config) Save(path string) error {
 		if i > 0 {
 			sb.WriteString("\n")
 		}
-		sb.WriteString(fmt.Sprintf("[%s]\n", a.Profile))
-		sb.WriteString(fmt.Sprintf("name = %s\n", a.Name))
-		sb.WriteString(fmt.Sprintf("email = %s\n", a.Email))
+		fmt.Fprintf(&sb, "[%s]\n", a.Profile)
+		fmt.Fprintf(&sb, "name = %s\n", a.Name)
+		fmt.Fprintf(&sb, "email = %s\n", a.Email)
 		if a.SSHKey != "" {
-			sb.WriteString(fmt.Sprintf("ssh_key = %s\n", a.SSHKey))
+			fmt.Fprintf(&sb, "ssh_key = %s\n", a.SSHKey)
 		}
 	}
 
