@@ -7,8 +7,8 @@ import (
 
 // Cmd is the `ge fetch` command.
 var Cmd = &cobra.Command{
-	Use:   "fetch [args...]",
-	Short: "Fetch and prune remote tracking branches",
+	Use:                "fetch [args...]",
+	Short:              "Fetch and prune remote tracking branches",
 	DisableFlagParsing: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		gitArgs := append([]string{"fetch", "--prune"}, args...)

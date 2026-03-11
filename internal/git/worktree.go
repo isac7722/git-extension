@@ -8,11 +8,11 @@ import (
 
 // WorktreeInfo holds worktree metadata.
 type WorktreeInfo struct {
-	Path     string
-	Branch   string
-	IsMain   bool
-	IsBare   bool
-	Status   string // "✔", "*", or combined like "* ↑1 ↓2"
+	Path   string
+	Branch string
+	IsMain bool
+	IsBare bool
+	Status string // "✔", "*", or combined like "* ↑1 ↓2"
 }
 
 // ListWorktrees returns all worktrees with status info.
@@ -35,19 +35,11 @@ func ListWorktrees() ([]WorktreeInfo, error) {
 		case line == "bare":
 			current.IsBare = true
 		case line == "":
-			if current.Path != "" {
-				// Determine status
-				current.Status = worktreeStatus(current.Path, current.Branch)
-				worktrees = append(worktrees, current)
-			}
-			current = WorktreeInfo{}
+			finalizeWorktree(&worktrees, &current)
 		}
 	}
 	// Handle last entry without trailing newline
-	if current.Path != "" {
-		current.Status = worktreeStatus(current.Path, current.Branch)
-		worktrees = append(worktrees, current)
-	}
+	finalizeWorktree(&worktrees, &current)
 
 	// Mark main worktree
 	if len(worktrees) > 0 {
@@ -55,6 +47,14 @@ func ListWorktrees() ([]WorktreeInfo, error) {
 	}
 
 	return worktrees, nil
+}
+
+func finalizeWorktree(worktrees *[]WorktreeInfo, current *WorktreeInfo) {
+	if current.Path != "" {
+		current.Status = worktreeStatus(current.Path, current.Branch)
+		*worktrees = append(*worktrees, *current)
+	}
+	*current = WorktreeInfo{}
 }
 
 func worktreeStatus(path, branch string) string {
@@ -147,39 +147,37 @@ func AvailableBranches() (local []string, remote []string, err error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	localSet := make(map[string]bool)
 	for _, b := range strings.Split(out, "\n") {
 		b = strings.TrimSpace(b)
 		if b != "" && !inUse[b] {
 			local = append(local, b)
+			localSet[b] = true
 		}
 	}
 
 	// Remote branches
 	out, err = Run("for-each-ref", "--format=%(refname:short)", "refs/remotes/origin/")
 	if err == nil {
-		for _, b := range strings.Split(out, "\n") {
-			b = strings.TrimSpace(b)
-			if b == "" || b == "origin/HEAD" {
-				continue
-			}
-			shortName := strings.TrimPrefix(b, "origin/")
-			if !inUse[shortName] {
-				// Skip if there's already a local branch with same name
-				alreadyLocal := false
-				for _, lb := range local {
-					if lb == shortName {
-						alreadyLocal = true
-						break
-					}
-				}
-				if !alreadyLocal {
-					remote = append(remote, b)
-				}
-			}
-		}
+		remote = filterRemoteBranches(out, inUse, localSet)
 	}
 
 	return local, remote, nil
+}
+
+func filterRemoteBranches(output string, inUse, localSet map[string]bool) []string {
+	var remote []string
+	for _, b := range strings.Split(output, "\n") {
+		b = strings.TrimSpace(b)
+		if b == "" || b == "origin/HEAD" {
+			continue
+		}
+		shortName := strings.TrimPrefix(b, "origin/")
+		if !inUse[shortName] && !localSet[shortName] {
+			remote = append(remote, b)
+		}
+	}
+	return remote
 }
 
 // MainWorktreePath returns the path of the main worktree.
