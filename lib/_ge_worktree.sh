@@ -360,11 +360,184 @@ _ge_worktree_help() {
   echo "$(_ge_bold 'Subcommands:')"
   printf "  %-28s %s\n" "add [branch] [dir]" "Create worktree (interactive selector if no branch given)"
   printf "  %-28s %s\n" "list"               "Interactive worktree selector"
-  printf "  %-28s %s\n" "remove <branch|path>" "Remove a worktree by branch name or path"
+  printf "  %-28s %s\n" "remove [branch|path]" "Remove a worktree (interactive selector if no args)"
   printf "  %-28s %s\n" "prune"              "Clean up stale worktree info"
   echo ""
   echo "  Any other subcommand is passed directly to 'git worktree'."
   echo ""
+}
+
+_ge_worktree_remove_selector() {
+  # zsh: make arrays 0-indexed like bash (scoped to this function only)
+  [ -n "$ZSH_VERSION" ] && setopt localoptions KSH_ARRAYS
+
+  # Must be run from a terminal
+  [[ -t 0 ]] || return 1
+
+  if ! git rev-parse --git-dir &>/dev/null; then
+    echo "$(_ge_red '✗') Current directory is not a git repository."
+    return 1
+  fi
+
+  local all_paths=() all_branches=()
+  local paths=() branches=()
+  local line wt_path wt_hash wt_branch_raw wt_branch
+  local first=1
+  while IFS= read -r line; do
+    read -r wt_path wt_hash wt_branch_raw <<< "$line"
+    wt_branch="${wt_branch_raw#\[}"
+    wt_branch="${wt_branch%\]}"
+    all_paths+=("$wt_path")
+    all_branches+=("$wt_branch")
+    # Skip main worktree (first entry)
+    if [[ $first -eq 1 ]]; then
+      first=0
+      continue
+    fi
+    paths+=("$wt_path")
+    branches+=("$wt_branch")
+  done < <(git worktree list)
+
+  local total=${#paths[@]}
+  if [[ $total -eq 0 ]]; then
+    echo ""
+    echo "  $(_ge_yellow '⚠') No removable worktrees found."
+    echo ""
+    return 0
+  fi
+
+  local current_path selected=0
+  current_path="$(pwd -P 2>/dev/null || pwd)"
+
+  # Pre-select current worktree
+  local i
+  for (( i=0; i<total; i++ )); do
+    if [[ "$current_path" == "${paths[$i]}"* ]]; then
+      selected=$i
+      break
+    fi
+  done
+
+  # Hide cursor and set up cleanup
+  tput civis 2>/dev/null
+  trap 'tput cnorm 2>/dev/null; trap - INT; return 1' INT
+
+  _ge_worktree_remove_render() {
+    if [[ "${1:-}" == "redraw" ]]; then
+      local lines_up=$(( 2 + total + 2 ))
+      printf "\033[%dA\033[J" "$lines_up"
+    fi
+
+    printf "  %s\n" "$(_ge_bold 'Remove worktree')"
+    printf "  %s\n" "$(_ge_dim '──────────────────────────────────────────────')"
+
+    local idx branch_display path_display pad_len padding
+    for (( idx=0; idx<total; idx++ )); do
+      branch_display="${branches[$idx]}"
+      path_display="${paths[$idx]/#$HOME/~}"
+
+      pad_len=$(( 24 - ${#branch_display} ))
+      (( pad_len < 1 )) && pad_len=1
+      padding="$(printf '%*s' "$pad_len" "")"
+
+      if [[ $idx -eq $selected ]]; then
+        printf "  %s %s%s%s" "$(_ge_cyan '❯')" "$(_ge_bold "$branch_display")" "$padding" "$(_ge_dim "$path_display")"
+      else
+        printf "    %s%s%s" "$branch_display" "$padding" "$(_ge_dim "$path_display")"
+      fi
+
+      if [[ "$current_path" == "${paths[$idx]}"* ]]; then
+        printf "  %s" "$(_ge_yellow '(you are here)')"
+      fi
+      printf "\n"
+    done
+
+    printf "  %s\n" "$(_ge_dim '──────────────────────────────────────────────')"
+    printf "  %s\n" "$(_ge_dim '↑↓ navigate  ⏎ select  esc/q cancel')"
+  }
+
+  # Initial render
+  echo ""
+  _ge_worktree_remove_render
+
+  # Read input loop
+  local _read_char _read_chars
+  if [ -n "$ZSH_VERSION" ]; then
+    _read_char()  { IFS= read -rsk1 "$1"; }
+    _read_chars() { read -rsk2 -t 0.1 "$1"; }
+  else
+    _read_char()  { IFS= read -rsn1 "$1"; }
+    _read_chars() { read -rsn2 -t 0.1 "$1"; }
+  fi
+
+  local key
+  while true; do
+    _read_char key
+
+    case "$key" in
+      $'\x1b')
+        _read_chars key
+        case "$key" in
+          '[A') (( selected > 0 )) && (( selected-- )) ;;
+          '[B') (( selected < total - 1 )) && (( selected++ )) ;;
+          *)  # ESC alone or unknown sequence → cancel
+            tput cnorm 2>/dev/null
+            trap - INT
+            echo ""
+            return 0
+            ;;
+        esac
+        ;;
+      'k') (( selected > 0 )) && (( selected-- )) ;;
+      'j') (( selected < total - 1 )) && (( selected++ )) ;;
+      ''|$'\n')
+        tput cnorm 2>/dev/null
+        trap - INT
+
+        local sel_branch="${branches[$selected]}"
+        local sel_path="${paths[$selected]}"
+
+        # Confirmation prompt
+        printf "\n  Remove worktree %s? [y/N] " "$(_ge_bold "$sel_branch")"
+        local confirm
+        if [ -n "$ZSH_VERSION" ]; then
+          IFS= read -rsk1 confirm </dev/tty
+        else
+          IFS= read -rsn1 confirm </dev/tty
+        fi
+        echo ""
+
+        if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+          _ge_worktree_remove "$sel_branch"
+          local rc=$?
+          if [[ $rc -eq 0 ]]; then
+            # If user was inside the removed worktree, cd to main worktree
+            if [[ "$current_path" == "$sel_path"* ]]; then
+              local main_path="${all_paths[0]}"
+              cd "$main_path"
+              echo ""
+              echo "$(_ge_green '✔') Switched to main worktree"
+              printf "  %-10s %s\n" "Path:" "$(_ge_dim "$main_path")"
+              echo ""
+            fi
+          fi
+          return $rc
+        else
+          echo "  Cancelled."
+          echo ""
+          return 0
+        fi
+        ;;
+      'q'|$'\x03'|$'\x1a') # q, Ctrl-C, Ctrl-Z
+        tput cnorm 2>/dev/null
+        trap - INT
+        echo ""
+        return 0
+        ;;
+    esac
+
+    _ge_worktree_remove_render "redraw"
+  done
 }
 
 _ge_worktree_remove() {
@@ -372,8 +545,8 @@ _ge_worktree_remove() {
   local force_flag="$2"
 
   if [[ -z "$target" ]]; then
-    echo "$(_ge_red '✗') Usage: ge worktree remove <branch|path> [--force]"
-    return 1
+    _ge_worktree_remove_selector
+    return $?
   fi
 
   # Try to resolve branch name to worktree path
