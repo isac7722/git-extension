@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # git-extension installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/isac7722/git-extension/main/ge-cli-go/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/isac7722/git-extension/main/install.sh | bash
 #
 # Downloads the latest ge binary from GitHub Releases.
 # ============================================================
