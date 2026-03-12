@@ -3,6 +3,7 @@ package clean
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/isac7722/git-extension/internal/git"
 	"github.com/isac7722/git-extension/internal/tui"
@@ -32,6 +33,12 @@ By default, shows all stale branches with an interactive selector.`,
 		fmt.Fprintf(os.Stderr, "Fetching and pruning...\n")
 		if _, err := git.Run("fetch", "--prune"); err != nil {
 			fmt.Fprintf(os.Stderr, "⚠ fetch --prune failed: %v\n", err)
+		}
+
+		// Show protected branches
+		protectedList := git.ProtectedBranches()
+		if len(protectedList) > 0 {
+			fmt.Fprintf(os.Stderr, "ℹ Protected branches (skipped): %s\n", strings.Join(protectedList, ", "))
 		}
 
 		// Collect branches

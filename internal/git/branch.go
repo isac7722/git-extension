@@ -135,21 +135,130 @@ func DefaultBranch() string {
 	return "master"
 }
 
-// ProtectedBranches returns the list of protected branch names.
-func ProtectedBranches() []string {
-	protected := []string{"main", "master", "develop", "dev", "staging", "production", "release"}
+// defaultProtected is the built-in list of protected branch names.
+var defaultProtected = []string{"main", "prod", "stg", "dev"}
 
-	// Check custom protected branches from git config
-	custom, err := GetConfig("ge.clean.protected")
-	if err == nil && custom != "" {
-		for _, b := range strings.Split(custom, ",") {
-			b = strings.TrimSpace(b)
-			if b != "" {
-				protected = append(protected, b)
-			}
+// DefaultProtectedBranches returns the built-in default protected branch names,
+// excluding any that appear in the exclude-defaults list.
+func DefaultProtectedBranches() []string {
+	excluded := excludedDefaultSet()
+	var result []string
+	for _, b := range defaultProtected {
+		if !excluded[b] {
+			result = append(result, b)
+		}
+	}
+	return result
+}
+
+// AllDefaultProtectedBranches returns all built-in defaults without filtering.
+func AllDefaultProtectedBranches() []string {
+	return append([]string{}, defaultProtected...)
+}
+
+// ExcludedDefaultBranches returns the list of default branches excluded by the user.
+func ExcludedDefaultBranches() []string {
+	raw, err := GetConfig("ge.protected-branches.exclude-defaults")
+	if err != nil || raw == "" {
+		return nil
+	}
+	var result []string
+	for _, b := range strings.Split(raw, ",") {
+		b = strings.TrimSpace(b)
+		if b != "" {
+			result = append(result, b)
+		}
+	}
+	return result
+}
+
+func excludedDefaultSet() map[string]bool {
+	m := make(map[string]bool)
+	for _, b := range ExcludedDefaultBranches() {
+		m[b] = true
+	}
+	return m
+}
+
+// IsDefaultProtected checks if a branch is in the built-in default list (regardless of exclusion).
+func IsDefaultProtected(branch string) bool {
+	for _, b := range defaultProtected {
+		if branch == b {
+			return true
+		}
+	}
+	return false
+}
+
+// ExcludeDefaultBranch adds a default branch to the exclude list.
+func ExcludeDefaultBranch(name string, global bool) error {
+	existing := ExcludedDefaultBranches()
+	for _, b := range existing {
+		if b == name {
+			return nil // already excluded
+		}
+	}
+	newList := append(existing, name)
+	value := strings.Join(newList, ",")
+	if global {
+		return SetConfigGlobal("ge.protected-branches.exclude-defaults", value)
+	}
+	return SetConfigLocal("ge.protected-branches.exclude-defaults", value)
+}
+
+// RestoreDefaultBranch removes a default branch from the exclude list.
+func RestoreDefaultBranch(name string, global bool) error {
+	existing := ExcludedDefaultBranches()
+	var remaining []string
+	found := false
+	for _, b := range existing {
+		if b == name {
+			found = true
+			continue
+		}
+		remaining = append(remaining, b)
+	}
+	if !found {
+		return nil
+	}
+	if len(remaining) == 0 {
+		if global {
+			return UnsetConfigGlobal("ge.protected-branches.exclude-defaults")
+		}
+		return UnsetConfigLocal("ge.protected-branches.exclude-defaults")
+	}
+	value := strings.Join(remaining, ",")
+	if global {
+		return SetConfigGlobal("ge.protected-branches.exclude-defaults", value)
+	}
+	return SetConfigLocal("ge.protected-branches.exclude-defaults", value)
+}
+
+// CustomProtectedBranches returns user-configured protected branch names.
+func CustomProtectedBranches() []string {
+	custom, err := GetConfig("ge.protected-branches")
+	if err != nil || custom == "" {
+		// Fallback: read legacy config key
+		custom, err = GetConfig("ge.clean.protected")
+		if err != nil || custom == "" {
+			return nil
 		}
 	}
 
+	var branches []string
+	for _, b := range strings.Split(custom, ",") {
+		b = strings.TrimSpace(b)
+		if b != "" {
+			branches = append(branches, b)
+		}
+	}
+	return branches
+}
+
+// ProtectedBranches returns the list of protected branch names.
+func ProtectedBranches() []string {
+	protected := DefaultProtectedBranches()
+	protected = append(protected, CustomProtectedBranches()...)
 	return protected
 }
 
