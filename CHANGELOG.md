@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.3.0](https://github.com/isac7722/git-extension/compare/v2.2.0...v2.3.0) (2026-03-12)
+
+
+### Features
+
+* **protection:** add protection command with excludable default branches ([950a136](https://github.com/isac7722/git-extension/commit/950a136f6f73897c49ea3bfd531edee4d5cad567))
+* **protection:** add protection command with excludable default branches ([fe04536](https://github.com/isac7722/git-extension/commit/fe0453683f5bf3578b77f80563428014063290aa))
+
 ## [2.2.0](https://github.com/isac7722/git-extension/compare/v2.1.0...v2.2.0) (2026-03-12)
 
 
