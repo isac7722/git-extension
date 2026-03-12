@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.0](https://github.com/isac7722/git-extension/compare/v2.1.0...v2.2.0) (2026-03-12)
+
+
+### Features
+
+* **pr:** add interactive head branch selector and reviewer workflow ([8e921db](https://github.com/isac7722/git-extension/commit/8e921db90ff60e05d4c236079b8dc2036df330e8))
+* **pr:** add interactive head branch selector and reviewer workflow ([13a8417](https://github.com/isac7722/git-extension/commit/13a8417eb77eb15de4b07ab1512b5114e6caf197))
+
 ## [2.1.0](https://github.com/isac7722/git-extension/compare/v2.0.2...v2.1.0) (2026-03-12)
 
 
