@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/isac7722/git-extension/internal/git"
 	"github.com/isac7722/git-extension/internal/tui"
 	"github.com/spf13/cobra"
 )
+
+var ticketRe = regexp.MustCompile(`(?i)(AHD-\d+)`)
 
 // Cmd is the `ge pr` command.
 var Cmd = &cobra.Command{
@@ -38,12 +41,16 @@ func runPR(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Prompt for title
-	title, ok, err := tui.RunPrompt("PR title:", "")
+	// Prompt for title (pre-fill with ticket ID if branch matches AHD-N pattern)
+	var titlePrefix string
+	if ticket := extractTicketID(head); ticket != "" {
+		titlePrefix = fmt.Sprintf("[%s] ", ticket)
+	}
+	title, ok, err := tui.RunPromptWithValue("PR title:", "", titlePrefix)
 	if err != nil {
 		return err
 	}
-	if !ok || title == "" {
+	if !ok || strings.TrimSpace(title) == "" {
 		fmt.Fprintln(os.Stderr, "Cancelled.")
 		return nil
 	}
@@ -109,6 +116,12 @@ func createPR(head, base, title, body string) error {
 		fmt.Fprintf(os.Stderr, "✔ Pull request created: %s\n", url)
 	}
 	return nil
+}
+
+// extractTicketID returns the ticket ID (e.g. "AHD-123") from a branch name, or "".
+func extractTicketID(branch string) string {
+	m := ticketRe.FindString(branch)
+	return strings.ToUpper(m)
 }
 
 // ensurePushed checks if the branch exists on the remote, and pushes it if not.
