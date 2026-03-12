@@ -9,6 +9,7 @@ import (
 	"github.com/isac7722/git-extension/internal/cmd/clean"
 	"github.com/isac7722/git-extension/internal/cmd/fetch"
 	"github.com/isac7722/git-extension/internal/cmd/pr"
+	"github.com/isac7722/git-extension/internal/cmd/protection"
 	"github.com/isac7722/git-extension/internal/cmd/user"
 	"github.com/isac7722/git-extension/internal/cmd/worktree"
 	"github.com/spf13/cobra"
@@ -66,6 +67,7 @@ func init() {
 	rootCmd.AddCommand(branch.Cmd)
 	rootCmd.AddCommand(pr.Cmd)
 	rootCmd.AddCommand(fetch.Cmd)
+	rootCmd.AddCommand(protection.Cmd)
 
 	// "wt" alias for worktree
 	wtCmd := *worktree.Cmd

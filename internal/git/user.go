@@ -19,6 +19,18 @@ func SetConfigLocal(key, value string) error {
 	return err
 }
 
+// UnsetConfigLocal removes a git config key from the local repo.
+func UnsetConfigLocal(key string) error {
+	_, err := Run("config", "--local", "--unset", key)
+	return err
+}
+
+// UnsetConfigGlobal removes a git config key globally.
+func UnsetConfigGlobal(key string) error {
+	_, err := Run("config", "--global", "--unset", key)
+	return err
+}
+
 // CurrentUser returns the current git user name and email.
 func CurrentUser() (name, email string) {
 	name, _ = GetConfig("user.name")
