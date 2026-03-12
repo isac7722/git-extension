@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0](https://github.com/isac7722/git-extension/compare/v2.0.2...v2.1.0) (2026-03-12)
+
+
+### Features
+
+* 브랜치명 기반 PR 타이틀 티켓 번호 자동 프리픽스 ([53f8d5d](https://github.com/isac7722/git-extension/commit/53f8d5d6fe7c1b74ab65cc3210c3273fe28247db))
+* 브랜치명 기반 PR 타이틀 티켓 번호 자동 프리픽스 ([fbb3121](https://github.com/isac7722/git-extension/commit/fbb3121ec0d7d848b4141b5c9a94956e00fc8012))
+
 ## [2.0.2](https://github.com/isac7722/git-extension/compare/v2.0.1...v2.0.2) (2026-03-11)
 
 
