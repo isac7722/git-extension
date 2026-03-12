@@ -121,7 +121,7 @@ func selectBranchesToRemove() ([]string, error) {
 		return nil, nil
 	}
 
-	indices, err := tui.RunMultiSelector(items)
+	indices, err := tui.RunMultiSelector(items, "Select branches to delete:")
 	if err != nil {
 		return nil, err
 	}

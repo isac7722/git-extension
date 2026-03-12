@@ -19,14 +19,15 @@ type MultiItem struct {
 // MultiSelectorModel is a multi-select list with checkboxes.
 type MultiSelectorModel struct {
 	Items  []MultiItem
+	header string
 	cursor int
 	quit   bool
 	done   bool
 }
 
 // NewMultiSelector creates a new multi-selector.
-func NewMultiSelector(items []MultiItem) MultiSelectorModel {
-	return MultiSelectorModel{Items: items}
+func NewMultiSelector(items []MultiItem, header string) MultiSelectorModel {
+	return MultiSelectorModel{Items: items, header: header}
 }
 
 func (m MultiSelectorModel) Init() tea.Cmd { return nil }
@@ -65,7 +66,7 @@ func (m *MultiSelectorModel) moveCursor(delta int) {
 func (m MultiSelectorModel) View() string {
 	var sb strings.Builder
 
-	sb.WriteString(Dim.Render("Select branches to delete:") + "\n\n")
+	sb.WriteString(Dim.Render(m.header) + "\n\n")
 
 	for i, item := range m.Items {
 		cursor := "  "
@@ -133,8 +134,8 @@ func (m MultiSelectorModel) SelectedIndices() []int {
 }
 
 // RunMultiSelector runs the multi-selector and returns selected indices.
-func RunMultiSelector(items []MultiItem) ([]int, error) {
-	m := NewMultiSelector(items)
+func RunMultiSelector(items []MultiItem, header string) ([]int, error) {
+	m := NewMultiSelector(items, header)
 	p := tea.NewProgram(m, tea.WithOutput(os.Stderr))
 	finalModel, err := p.Run()
 	if err != nil {

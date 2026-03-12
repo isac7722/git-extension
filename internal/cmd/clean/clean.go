@@ -108,7 +108,7 @@ By default, shows all stale branches with an interactive selector.`,
 				})
 			}
 
-			indices, err := tui.RunMultiSelector(items)
+			indices, err := tui.RunMultiSelector(items, "Select branches to delete:")
 			if err != nil {
 				return err
 			}
