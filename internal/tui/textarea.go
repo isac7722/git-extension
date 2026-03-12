@@ -24,6 +24,7 @@ func NewTextArea(label, placeholder string) TextAreaModel {
 	ta.ShowLineNumbers = false
 	ta.SetWidth(72)
 	ta.SetHeight(5)
+	ta.KeyMap.InsertNewline.SetKeys("alt+enter")
 	ta.Focus()
 	return TextAreaModel{
 		textarea: ta,
@@ -42,7 +43,7 @@ func (m TextAreaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			m.done = true
 			return m, tea.Quit
-		case "shift+enter":
+		case "alt+enter":
 			m.textarea.InsertString("\n")
 			return m, nil
 		case "esc", "ctrl+c":
@@ -57,7 +58,7 @@ func (m TextAreaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m TextAreaModel) View() string {
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "%s %s %s\n", Cyan.Render("?"), Bold.Render(m.label), Dim.Render("(Enter to submit, Shift+Enter for newline)"))
+	fmt.Fprintf(&sb, "%s %s %s\n", Cyan.Render("?"), Bold.Render(m.label), Dim.Render("(Enter to submit, Alt(Option)+Enter for newline)"))
 	sb.WriteString(m.textarea.View())
 	return sb.String()
 }
