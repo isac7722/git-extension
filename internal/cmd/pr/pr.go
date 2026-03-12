@@ -71,7 +71,7 @@ func runPR(cmd *cobra.Command, args []string) error {
 	}
 
 	// Prompt for description
-	body, ok, err := tui.RunPrompt("PR description:", "")
+	body, ok, err := tui.RunTextArea("PR description:", "")
 	if err != nil {
 		return err
 	}
@@ -179,6 +179,13 @@ func showSummary(opts prOptions) bool {
 
 	fmt.Fprintf(os.Stderr, "  %s → %s\n", opts.Head, opts.Base)
 	fmt.Fprintf(os.Stderr, "  Title:     %s\n", opts.Title)
+
+	if opts.Body != "" {
+		fmt.Fprintf(os.Stderr, "  Body:\n")
+		for _, line := range strings.Split(opts.Body, "\n") {
+			fmt.Fprintf(os.Stderr, "    %s\n", line)
+		}
+	}
 
 	draftLabel := "No"
 	if opts.Draft {
