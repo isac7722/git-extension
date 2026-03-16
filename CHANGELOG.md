@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/isac7722/git-extension/compare/v2.4.0...v2.5.0) (2026-03-16)
+
+
+### Features
+
+* **worktree:** add automatic environment setup on worktree creation ([8aad78c](https://github.com/isac7722/git-extension/commit/8aad78c2f52ebe89156dd4d79344e8b66d3b45d8))
+
 ## [2.4.0](https://github.com/isac7722/git-extension/compare/v2.3.0...v2.4.0) (2026-03-12)
 
 
