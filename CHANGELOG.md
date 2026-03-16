@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.4.0](https://github.com/isac7722/git-extension/compare/v2.3.0...v2.4.0) (2026-03-12)
+
+
+### Features
+
+* **pr:** replace single-line description input with multi-line textarea ([26f050b](https://github.com/isac7722/git-extension/commit/26f050b8af3b5df0ae99dd89aa4848491240b842))
+
+
+### Bug Fixes
+
+* **pr:** shift+enter 대신 alt+enter로 줄바꿈 키 변경 ([307b56d](https://github.com/isac7722/git-extension/commit/307b56d961a004b44495561b999351cc7225ef22))
+* **pr:** shift+enter 대신 alt+enter로 줄바꿈 키 변경 ([abca6c7](https://github.com/isac7722/git-extension/commit/abca6c7f760330e36ec1dfc732768a42642f64c8))
+
+## [2.3.0](https://github.com/isac7722/git-extension/compare/v2.2.0...v2.3.0) (2026-03-12)
+
+
+### Features
+
+* **protection:** add protection command with excludable default branches ([950a136](https://github.com/isac7722/git-extension/commit/950a136f6f73897c49ea3bfd531edee4d5cad567))
+* **protection:** add protection command with excludable default branches ([fe04536](https://github.com/isac7722/git-extension/commit/fe0453683f5bf3578b77f80563428014063290aa))
+
 ## [2.2.0](https://github.com/isac7722/git-extension/compare/v2.1.0...v2.2.0) (2026-03-12)
 
 

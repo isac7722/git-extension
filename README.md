@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/isac7722/git-extension)](https://goreportcard.com/report/github.com/isac7722/git-extension)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A lightweight CLI that extends Git with **multi-account management**, **interactive branch switching**, **enhanced worktree support**, and **branch cleanup** — with seamless git passthrough.
+A lightweight CLI that extends Git with **multi-account management**, **interactive branch switching**, **enhanced worktree support**, **branch cleanup**, and **branch protection management** — with seamless git passthrough.
 
 ## Features
 
@@ -14,6 +14,7 @@ A lightweight CLI that extends Git with **multi-account management**, **interact
 - **Enhanced worktrees** — Create, list, and remove worktrees with auto branch creation and status indicators
 - **Branch cleanup** — Interactively remove stale branches (gone, merged, local-only) with a multi-select TUI
 - **Pull request creation** — Create GitHub PRs interactively with auto-push support (requires `gh` CLI)
+- **Branch protection** — Manage protected branches with support for excluding defaults via confirmation prompt
 - **Smart fetch** — `ge fetch` always prunes stale remote tracking branches
 - **Git passthrough** — Any unknown command is forwarded to git (`ge commit` = `git commit`)
 
@@ -137,6 +138,20 @@ ge pr <head> <base>     # create PR from head → base
 ```
 
 Creates a GitHub pull request with an interactive TUI for title and description. Automatically pushes the branch if it hasn't been pushed yet. Requires the [`gh` CLI](https://cli.github.com/) to be installed and authenticated.
+
+### Branch Protection — `ge protection`
+
+```bash
+ge protection                      # list all protected branches
+ge protection add <branch>         # add a custom protected branch
+ge protection add <branch> --global # add globally
+ge protection remove [branch...]   # remove branches (interactive if no args)
+ge protection remove main          # remove default branch (with confirmation)
+```
+
+Default protected branches are `main`, `prod`, `stg`, `dev`. Custom branches can be added freely.
+
+Removing a default branch requires a `y/N` confirmation and stores it in an exclude list rather than deleting the default entry. Re-adding an excluded default (`ge protection add main`) restores it. The `ge clean` command respects these settings and skips all active protected branches.
 
 ### Fetch — `ge fetch`
 
