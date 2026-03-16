@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.0](https://github.com/isac7722/git-extension/compare/v2.5.0...v2.6.0) (2026-03-16)
+
+
+### Features
+
+* **worktree:** add multi-select removal and `clean` command ([ecf4421](https://github.com/isac7722/git-extension/commit/ecf4421e449db150466f63c3e0060f7dcd823965))
+* **worktree:** add multi-select removal and `clean` command ([97e5b6f](https://github.com/isac7722/git-extension/commit/97e5b6f956d3c6b787cfb818a36bff6e5fe49820))
+
 ## [2.5.0](https://github.com/isac7722/git-extension/compare/v2.4.0...v2.5.0) (2026-03-16)
 
 
