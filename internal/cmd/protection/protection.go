@@ -162,7 +162,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 
-		indices, err := tui.RunMultiSelector(items)
+		indices, err := tui.RunMultiSelector(items, "Select branches to unprotect:")
 		if err != nil {
 			return err
 		}
