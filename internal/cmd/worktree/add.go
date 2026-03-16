@@ -6,6 +6,7 @@ import (
 
 	"github.com/isac7722/git-extension/internal/git"
 	"github.com/isac7722/git-extension/internal/tui"
+	"github.com/isac7722/git-extension/internal/worktreesetup"
 	"github.com/spf13/cobra"
 )
 
@@ -41,10 +42,80 @@ var addCmd = &cobra.Command{
 		}
 
 		fmt.Fprintf(os.Stderr, "✔ Created worktree at %s\n", absPath)
+
+		noSetup, _ := cmd.Flags().GetBool("no-setup")
+		if !noSetup {
+			runWorktreeSetup(absPath)
+		}
+
 		// cd into new worktree via shell wrapper
 		fmt.Printf("__GE_EVAL:cd %q\n", absPath)
 		return nil
 	},
+}
+
+func init() {
+	addCmd.Flags().Bool("no-setup", false, "Skip worktree environment setup")
+}
+
+func runWorktreeSetup(dstPath string) {
+	mainPath, err := git.MainWorktreePath()
+	if err != nil {
+		return
+	}
+
+	cfg, err := worktreesetup.Load(mainPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "⚠ Failed to load %s: %s\n", worktreesetup.ConfigFile, err)
+		return
+	}
+
+	if cfg != nil {
+		// Scenario A: config exists, run automatically
+		fmt.Fprintf(os.Stderr, "  Setting up worktree...\n")
+		ok := worktreesetup.Run(cfg, mainPath, dstPath, false)
+		if ok {
+			fmt.Fprintf(os.Stderr, "✔ Worktree ready!\n")
+		} else {
+			fmt.Fprintf(os.Stderr, "⚠ Setup partially completed. Run: ge wt setup\n")
+		}
+		return
+	}
+
+	// Scenario B: no config, auto-detect
+	suggestions := worktreesetup.Detect(mainPath)
+	if len(suggestions) == 0 {
+		return
+	}
+
+	fmt.Fprintf(os.Stderr, "\nNo %s found. Detected setup:\n", worktreesetup.ConfigFile)
+
+	selectedCfg, err := selectAndBuildConfig(suggestions)
+	if err != nil || selectedCfg == nil {
+		return // cancelled or error
+	}
+
+	fmt.Fprintf(os.Stderr, "  Setting up worktree...\n")
+	ok := worktreesetup.Run(selectedCfg, mainPath, dstPath, false)
+	if ok {
+		fmt.Fprintf(os.Stderr, "✔ Setup complete\n")
+	} else {
+		fmt.Fprintf(os.Stderr, "⚠ Setup partially completed. Run: ge wt setup\n")
+	}
+
+	// Offer to save config
+	save, err := tui.RunConfirm("Save to " + worktreesetup.ConfigFile + "?")
+	if err != nil || !save {
+		return
+	}
+
+	if err := worktreesetup.Save(mainPath, selectedCfg); err != nil {
+		fmt.Fprintf(os.Stderr, "⚠ Failed to save config: %s\n", err)
+		return
+	}
+
+	fmt.Fprintf(os.Stderr, "✔ Saved %s\n", worktreesetup.ConfigFile)
+	fmt.Fprintf(os.Stderr, "  Tip: commit this file to share with your team\n")
 }
 
 func selectBranch() (string, error) {
