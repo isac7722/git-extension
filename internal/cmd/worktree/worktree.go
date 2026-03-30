@@ -22,4 +22,5 @@ func init() {
 	Cmd.AddCommand(setupCmd)
 	Cmd.AddCommand(initCmd)
 	Cmd.AddCommand(cleanCmd)
+	Cmd.AddCommand(configCmd)
 }
