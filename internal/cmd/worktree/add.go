@@ -13,7 +13,9 @@ import (
 var addCmd = &cobra.Command{
 	Use:   "add [branch] [directory]",
 	Short: "Create a new worktree",
-	Long:  "Create a new worktree. Auto-creates the branch if it doesn't exist.",
+	Long: `Create a new worktree. Auto-creates the branch if it doesn't exist.
+
+Default location is ../worktrees/branch. Use 'ge wt config' to change.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var branch, dir string
 

@@ -92,10 +92,20 @@ func worktreeStatus(path, branch string) string {
 	return strings.Join(parts, " ")
 }
 
+// WorkDir returns the configured worktree base directory.
+// Falls back to "../worktrees" if not set.
+func WorkDir() string {
+	dir, err := GetConfig("ge.worktree.dir")
+	if err != nil || dir == "" {
+		return filepath.Join("..", "worktrees")
+	}
+	return dir
+}
+
 // AddWorktree creates a new worktree. Creates branch if it doesn't exist.
 func AddWorktree(branch, dir string) (string, error) {
 	if dir == "" {
-		dir = filepath.Join("..", branch)
+		dir = filepath.Join(WorkDir(), branch)
 	}
 
 	// Check if branch exists
