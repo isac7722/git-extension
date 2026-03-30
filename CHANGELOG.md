@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.7.0](https://github.com/isac7722/git-extension/compare/v2.6.0...v2.7.0) (2026-03-30)
+
+
+### Features
+
+* **worktree:** add configurable base directory for worktrees ([ae00fa4](https://github.com/isac7722/git-extension/commit/ae00fa4a10f934e4080715600c0c71bda37df922))
+* **worktree:** add configurable base directory for worktrees ([f4d60f5](https://github.com/isac7722/git-extension/commit/f4d60f579c97dae655534f7e5aa40d80f7d85eb2))
+
 ## [2.6.0](https://github.com/isac7722/git-extension/compare/v2.5.0...v2.6.0) (2026-03-16)
 
 
