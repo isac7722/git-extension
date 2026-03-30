@@ -102,15 +102,19 @@ func copyFile(name, srcDir, dstDir string, force bool) CopyResult {
 	if err != nil {
 		return CopyResult{File: name, Error: err}
 	}
-	defer src.Close()
+	defer func() { _ = src.Close() }()
 
 	dst, err := os.OpenFile(dstPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, srcInfo.Mode())
 	if err != nil {
 		return CopyResult{File: name, Error: err}
 	}
-	defer dst.Close()
 
 	if _, err := io.Copy(dst, src); err != nil {
+		_ = dst.Close()
+		return CopyResult{File: name, Error: err}
+	}
+
+	if err := dst.Close(); err != nil {
 		return CopyResult{File: name, Error: err}
 	}
 
