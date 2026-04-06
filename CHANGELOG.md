@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.2](https://github.com/isac7722/git-extension/compare/v2.7.1...v2.7.2) (2026-04-06)
+
+
+### Bug Fixes
+
+* **install:** add sudo to chmod when installing to non-writable directory ([ce675fa](https://github.com/isac7722/git-extension/commit/ce675fadaec1acbb121bd1fd56b0cad71df639ad))
+
 ## [2.7.1](https://github.com/isac7722/git-extension/compare/v2.7.0...v2.7.1) (2026-04-06)
 
 
