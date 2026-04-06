@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.1](https://github.com/isac7722/git-extension/compare/v2.7.0...v2.7.1) (2026-04-06)
+
+
+### Bug Fixes
+
+* **config:** initialize nil byName map in AddAccount to prevent panic ([b248f93](https://github.com/isac7722/git-extension/commit/b248f9368e88759aa116e2eb853fe00d6d7aae3c))
+
 ## [2.7.0](https://github.com/isac7722/git-extension/compare/v2.6.0...v2.7.0) (2026-03-30)
 
 
