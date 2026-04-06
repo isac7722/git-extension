@@ -130,6 +130,9 @@ func (c *Config) RemoveAccount(profile string) bool {
 // AddAccount adds a new account and updates the internal index.
 func (c *Config) AddAccount(a Account) {
 	a.SSHKey = expandHome(a.SSHKey)
+	if c.byName == nil {
+		c.byName = make(map[string]*Account)
+	}
 	c.Accounts = append(c.Accounts, a)
 	c.byName[a.Profile] = &c.Accounts[len(c.Accounts)-1]
 }
