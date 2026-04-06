@@ -143,11 +143,12 @@ tar -xzf "$TMP_DIR/$ARCHIVE_NAME" -C "$TMP_DIR"
 # Install binary
 if [[ -w "$INSTALL_DIR" ]]; then
   cp "$TMP_DIR/ge" "$INSTALL_DIR/ge"
+  chmod +x "$INSTALL_DIR/ge"
 else
   log "Requesting sudo to install to $INSTALL_DIR..."
   sudo cp "$TMP_DIR/ge" "$INSTALL_DIR/ge"
+  sudo chmod +x "$INSTALL_DIR/ge"
 fi
-chmod +x "$INSTALL_DIR/ge"
 success "Installed ge to $INSTALL_DIR/ge"
 
 # ── 2. Shell integration ────────────────────────────────────
