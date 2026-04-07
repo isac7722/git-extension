@@ -70,6 +70,7 @@ func init() {
 	rootCmd.AddCommand(fetch.Cmd)
 	rootCmd.AddCommand(protection.Cmd)
 	rootCmd.AddCommand(agent.Cmd)
+	rootCmd.AddCommand(uninstallCmd)
 
 	// "wt" alias for worktree
 	wtCmd := *worktree.Cmd

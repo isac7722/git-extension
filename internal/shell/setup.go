@@ -43,20 +43,51 @@ eval "$(command ge init %s)"
 
 // RemoveMarker removes the ge-cli block from an RC file.
 func RemoveMarker(rcPath string) error {
+	return removeMarkerBlock(rcPath, markerStart, markerEnd)
+}
+
+// RemoveAllMarkers removes all ge-related marker blocks (ge-cli, git-extension, gituser) from an RC file.
+func RemoveAllMarkers(rcPath string) error {
+	markers := [][2]string{
+		{"# >>> ge-cli >>>", "# <<< ge-cli <<<"},
+		{"# >>> git-extension >>>", "# <<< git-extension <<<"},
+		{"# >>> gituser >>>", "# <<< gituser <<<"},
+	}
+	for _, m := range markers {
+		if err := removeMarkerBlock(rcPath, m[0], m[1]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// HasAnyMarker checks if the RC file contains any ge-related marker (current or legacy).
+func HasAnyMarker(rcPath string) bool {
+	data, err := os.ReadFile(rcPath)
+	if err != nil {
+		return false
+	}
+	content := string(data)
+	return strings.Contains(content, "# >>> ge-cli >>>") ||
+		strings.Contains(content, "# >>> git-extension >>>") ||
+		strings.Contains(content, "# >>> gituser >>>")
+}
+
+func removeMarkerBlock(rcPath, start, end string) error {
 	data, err := os.ReadFile(rcPath)
 	if err != nil {
 		return err
 	}
 
 	content := string(data)
-	startIdx := strings.Index(content, markerStart)
-	endIdx := strings.Index(content, markerEnd)
+	startIdx := strings.Index(content, start)
+	endIdx := strings.Index(content, end)
 	if startIdx == -1 || endIdx == -1 {
 		return nil
 	}
 
 	// Remove from start of marker to end of marker line (including newline)
-	endIdx += len(markerEnd)
+	endIdx += len(end)
 	if endIdx < len(content) && content[endIdx] == '\n' {
 		endIdx++
 	}
