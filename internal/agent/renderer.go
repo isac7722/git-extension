@@ -13,13 +13,14 @@ import (
 )
 
 type AgentRenderer struct {
-	isTTY       bool
-	toolName    string
-	toolInput   strings.Builder
-	inToolBlock bool
-	spinnerStop chan struct{}
-	mu          sync.Mutex
-	needNewline bool // tracks whether we need a newline before the next text block
+	isTTY          bool
+	toolName       string
+	toolInput      strings.Builder
+	inToolBlock    bool
+	spinnerStop    chan struct{}
+	spinnerActive  bool // true after spinner has written at least one frame
+	mu             sync.Mutex
+	needNewline    bool // tracks whether we need a newline before the next text block
 }
 
 func NewAgentRenderer() *AgentRenderer {
@@ -129,6 +130,7 @@ func (r *AgentRenderer) startSpinner() {
 	if !r.isTTY {
 		return
 	}
+	r.spinnerActive = false
 	r.spinnerStop = make(chan struct{})
 	go func() {
 		frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
@@ -141,11 +143,13 @@ func (r *AgentRenderer) startSpinner() {
 				return
 			case <-ticker.C:
 				r.mu.Lock()
-				// Write spinner: backspace previous frame (if any), then write new frame
 				if i > 0 {
+					// Erase previous frame
 					fmt.Fprint(os.Stderr, "\b \b")
 				} else {
+					// First frame: add leading space
 					fmt.Fprint(os.Stderr, " ")
+					r.spinnerActive = true
 				}
 				fmt.Fprint(os.Stderr, tui.Dim.Render(frames[i%len(frames)]))
 				r.mu.Unlock()
@@ -164,10 +168,11 @@ func (r *AgentRenderer) StopSpinner(success bool) {
 		time.Sleep(10 * time.Millisecond)
 
 		r.mu.Lock()
-		if r.isTTY {
-			// Erase spinner character (backspace, space, backspace)
-			fmt.Fprint(os.Stderr, "\b \b")
+		if r.isTTY && r.spinnerActive {
+			// Erase spinner frame and its leading space
+			fmt.Fprint(os.Stderr, "\b \b\b \b")
 		}
+		r.spinnerActive = false
 		if success {
 			fmt.Fprint(os.Stderr, " "+tui.Green.Render("✔"))
 		} else {
