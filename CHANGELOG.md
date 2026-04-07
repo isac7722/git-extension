@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.0](https://github.com/isac7722/git-extension/compare/v2.9.0...v2.10.0) (2026-04-07)
+
+
+### Features
+
+* **uninstall:** add uninstall command with shell integration cleanup ([3187a8b](https://github.com/isac7722/git-extension/commit/3187a8bd8ba35358fbf46b21b4b866bcc4f35c89))
+
 ## [2.9.0](https://github.com/isac7722/git-extension/compare/v2.8.0...v2.9.0) (2026-04-07)
 
 
