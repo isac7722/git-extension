@@ -9,6 +9,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+agent_credentials
 /.claude
 /.agents
 skills-lock.json

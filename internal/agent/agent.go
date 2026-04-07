@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	anthropic "github.com/anthropics/anthropic-sdk-go"
+	"github.com/isac7722/git-extension/internal/config"
 )
 
 type Agent struct {
@@ -17,10 +18,29 @@ type Agent struct {
 	model    anthropic.Model
 }
 
+// ErrNoAPIKey is returned when no Anthropic API key is found.
+type ErrNoAPIKey struct{}
+
+func (e *ErrNoAPIKey) Error() string {
+	return "no Anthropic API key found"
+}
+
 func New() (*Agent, error) {
-	if os.Getenv("ANTHROPIC_API_KEY") == "" {
-		return nil, fmt.Errorf("ANTHROPIC_API_KEY environment variable is required")
+	apiKey := os.Getenv("ANTHROPIC_API_KEY")
+
+	if apiKey == "" {
+		cfg, err := config.LoadAgentConfig()
+		if err == nil && cfg.AnthropicAPIKey != "" {
+			apiKey = cfg.AnthropicAPIKey
+		}
 	}
+
+	if apiKey == "" {
+		return nil, &ErrNoAPIKey{}
+	}
+
+	// Set env var so anthropic-sdk-go picks it up
+	os.Setenv("ANTHROPIC_API_KEY", apiKey)
 
 	client := anthropic.NewClient()
 	tools, err := buildTools()

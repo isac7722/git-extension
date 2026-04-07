@@ -80,6 +80,22 @@ func RunPromptWithValue(label, placeholder, value string) (string, bool, error) 
 	return result.Value(), true, nil
 }
 
+// RunSecretPrompt runs a text prompt with masked input and returns the entered value.
+func RunSecretPrompt(label, placeholder string) (string, bool, error) {
+	m := NewPrompt(label, placeholder)
+	m.input.EchoMode = textinput.EchoPassword
+	p := tea.NewProgram(m, tea.WithOutput(os.Stderr))
+	finalModel, err := p.Run()
+	if err != nil {
+		return "", false, err
+	}
+	result := finalModel.(PromptModel)
+	if result.quit {
+		return "", false, nil
+	}
+	return result.Value(), true, nil
+}
+
 // RunPrompt runs a text prompt and returns the entered value.
 func RunPrompt(label, placeholder string) (string, bool, error) {
 	m := NewPrompt(label, placeholder)

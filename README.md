@@ -15,6 +15,7 @@ A lightweight CLI that extends Git with **multi-account management**, **interact
 - **Branch cleanup** — Interactively remove stale branches (gone, merged, local-only) with a multi-select TUI
 - **Pull request creation** — Create GitHub PRs interactively with auto-push support (requires `gh` CLI)
 - **Branch protection** — Manage protected branches with support for excluding defaults via confirmation prompt
+- **AI agent** — Claude-powered git agent that can execute commands, create PRs, and automate workflows
 - **Smart fetch** — `ge fetch` always prunes stale remote tracking branches
 - **Git passthrough** — Any unknown command is forwarded to git (`ge commit` = `git commit`)
 
@@ -153,6 +154,43 @@ Default protected branches are `main`, `prod`, `stg`, `dev`. Custom branches can
 
 Removing a default branch requires a `y/N` confirmation and stores it in an exclude list rather than deleting the default entry. Re-adding an excluded default (`ge protection add main`) restores it. The `ge clean` command respects these settings and skips all active protected branches.
 
+### AI Agent — `ge agent`
+
+```bash
+ge agent "summarize recent commits"      # one-shot mode
+ge agent "create a PR for current changes"
+ge agent                                  # interactive mode
+```
+
+An AI-powered git agent using Claude that can execute git commands, read files, and manage GitHub PRs on your behalf. The agent has access to the following tools:
+
+| Tool | Description |
+|------|-------------|
+| `git` | Execute any git command |
+| `read_file` | Read file contents |
+| `gh` | Execute GitHub CLI commands |
+| `shell` | Run shell commands |
+
+**Setup:**
+
+```bash
+# Set your API key (one-time, stored securely at ~/.ge/agent_credentials)
+ge agent config set-key
+
+# Or just run — it will prompt on first use
+ge agent "what changed today?"
+```
+
+**Key management:**
+
+```bash
+ge agent config set-key      # set or update API key
+ge agent config show         # show current key (masked)
+ge agent config remove-key   # remove stored key
+```
+
+The API key is loaded in this order: `ANTHROPIC_API_KEY` env var → `~/.ge/agent_credentials` file → interactive prompt.
+
 ### Fetch — `ge fetch`
 
 ```bash
@@ -199,6 +237,15 @@ ssh_key = ~/.ssh/personal_ed25519
 ```
 
 You can edit this file directly or use `ge user add` to create entries interactively.
+
+Agent credentials are stored separately in `~/.ge/agent_credentials` with `0600` permissions:
+
+```ini
+[default]
+anthropic_api_key = sk-ant-...
+```
+
+Use `ge agent config set-key` to configure, or set the `ANTHROPIC_API_KEY` environment variable.
 
 ## Contributing
 
