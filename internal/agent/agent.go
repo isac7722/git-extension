@@ -16,6 +16,7 @@ type Agent struct {
 	tools    []anthropic.BetaTool
 	messages []anthropic.BetaMessageParam
 	model    anthropic.Model
+	renderer *AgentRenderer
 }
 
 // ErrNoAPIKey is returned when no Anthropic API key is found.
@@ -49,9 +50,10 @@ func New() (*Agent, error) {
 	}
 
 	return &Agent{
-		client: client,
-		tools:  tools,
-		model:  anthropic.ModelClaudeSonnet4_5,
+		client:   client,
+		tools:    tools,
+		model:    anthropic.ModelClaudeSonnet4_5,
+		renderer: NewAgentRenderer(),
 	}, nil
 }
 
@@ -72,13 +74,21 @@ func (a *Agent) runOnce(ctx context.Context, systemPrompt, prompt string) error 
 	return a.executeAndPrint(ctx, systemPrompt)
 }
 
+func (a *Agent) toolNames() []string {
+	names := make([]string, len(a.tools))
+	for i, t := range a.tools {
+		names[i] = t.Name()
+	}
+	return names
+}
+
 func (a *Agent) runInteractive(ctx context.Context, systemPrompt string) error {
+	a.renderer.RenderWelcome(string(a.model), a.toolNames())
+
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("Git Agent started. Type your request (Ctrl+D to exit).")
-	fmt.Println()
 
 	for {
-		fmt.Print("You: ")
+		a.renderer.RenderPrompt()
 		if !scanner.Scan() {
 			break
 		}
@@ -95,16 +105,18 @@ func (a *Agent) runInteractive(ctx context.Context, systemPrompt string) error {
 		))
 
 		if err := a.executeAndPrint(ctx, systemPrompt); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			a.renderer.RenderError(err)
 			continue
 		}
-		fmt.Println()
+		a.renderer.RenderNewline()
 	}
 
 	return nil
 }
 
 func (a *Agent) executeAndPrint(ctx context.Context, systemPrompt string) error {
+	r := a.renderer
+
 	runner := a.client.Beta.Messages.NewToolRunnerStreaming(
 		a.tools,
 		anthropic.BetaToolRunnerParams{
@@ -120,38 +132,53 @@ func (a *Agent) executeAndPrint(ctx context.Context, systemPrompt string) error 
 		},
 	)
 
-	fmt.Print("\nAgent: ")
+	r.RenderAgentPrefix()
 
 	var lastMessage *anthropic.BetaMessage
+	firstIteration := true
 
 	for eventsIter, err := range runner.AllStreaming(ctx) {
 		if err != nil {
+			r.RenderError(err)
 			return fmt.Errorf("streaming error: %w", err)
 		}
+
+		// Stop spinner from previous iteration's tool execution
+		if !firstIteration {
+			r.StopSpinner(true)
+		}
+		firstIteration = false
+
 		for event, err := range eventsIter {
 			if err != nil {
+				r.StopSpinner(false)
+				r.RenderError(err)
 				return fmt.Errorf("event error: %w", err)
 			}
 			switch ev := event.AsAny().(type) {
 			case anthropic.BetaRawContentBlockStartEvent:
 				switch cb := ev.ContentBlock.AsAny().(type) {
 				case anthropic.BetaToolUseBlock:
-					fmt.Printf("\n[tool: %s] ", cb.Name)
+					r.StartToolBlock(cb.Name)
 				}
 			case anthropic.BetaRawContentBlockDeltaEvent:
 				switch delta := ev.Delta.AsAny().(type) {
 				case anthropic.BetaTextDelta:
-					fmt.Print(delta.Text)
+					r.RenderText(delta.Text)
 				case anthropic.BetaInputJSONDelta:
-					// Show tool input being streamed
-					fmt.Print(delta.PartialJSON)
+					r.AccumulateToolInput(delta.PartialJSON)
+				}
+			case anthropic.BetaRawContentBlockStopEvent:
+				if r.inToolBlock {
+					r.FinishToolBlock()
 				}
 			}
 		}
 		lastMessage = runner.LastMessage()
 	}
 
-	fmt.Println()
+	r.StopSpinner(true)
+	r.RenderNewline()
 
 	// Update message history with the full conversation
 	if lastMessage != nil {
