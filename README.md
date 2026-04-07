@@ -200,6 +200,22 @@ ge fetch <args...>      # git fetch --prune <args...>
 
 A thin wrapper around `git fetch` that always includes `--prune` to clean up stale remote tracking branches.
 
+### Uninstall — `ge uninstall`
+
+```bash
+ge uninstall              # remove all ge configuration and show binary removal instructions
+ge uninstall --dry-run    # preview what would be removed without changing anything
+```
+
+Discovers and removes all ge-related artifacts from your system:
+
+- Shell integration blocks from `~/.zshrc`, `~/.bashrc`, `~/.bash_profile`
+- Config directory (`~/.ge/`)
+- Git config keys (`ge.protected-branches`, `ge.worktree.dir`, etc.)
+- Legacy files (`~/.config/gituser/`)
+
+The binary itself cannot be removed from within — the command prints the appropriate removal instruction (`sudo rm` or `brew uninstall`) at the end.
+
 ### Git Passthrough
 
 Any command not recognized by `ge` is forwarded to `git`:
