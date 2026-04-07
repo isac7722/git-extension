@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.11.0](https://github.com/isac7722/git-extension/compare/v2.10.0...v2.11.0) (2026-04-07)
+
+
+### Features
+
+* add model selection, auto-update check, and upgrade command ([862577e](https://github.com/isac7722/git-extension/commit/862577e2a3f45864a84cc93420726d6708c727b3))
+* **agent:** add renderer for improved UI output ([0b591bb](https://github.com/isac7722/git-extension/commit/0b591bbd2ed20be10f271c1b89ed34197a72f9d3))
+
+
+### Bug Fixes
+
+* Delete Spinner ([ce621e1](https://github.com/isac7722/git-extension/commit/ce621e18dcd91d670fa3c7c047c35315c4641e0c))
+* **renderer:** improve spinner cleanup and state tracking ([7faa4db](https://github.com/isac7722/git-extension/commit/7faa4db37577807e4573748058da9958771a5cb8))
+* **renderer:** improve spinner rendering and output synchronization ([96d1c68](https://github.com/isac7722/git-extension/commit/96d1c68c577dcab504e4d0745c7baefbc598adc5))
+
 ## [2.10.0](https://github.com/isac7722/git-extension/compare/v2.9.0...v2.10.0) (2026-04-07)
 
 
