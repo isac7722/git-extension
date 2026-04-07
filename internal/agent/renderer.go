@@ -50,12 +50,23 @@ func (r *AgentRenderer) RenderAgentPrefix() {
 }
 
 func (r *AgentRenderer) RenderText(s string) {
+	// Stop spinner if a tool just finished and text is now streaming
+	r.StopSpinner(true)
+
+	if r.needNewline {
+		r.needNewline = false
+		fmt.Fprintln(os.Stderr)
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	fmt.Fprint(os.Stderr, s)
 }
 
 func (r *AgentRenderer) StartToolBlock(name string) {
+	// Stop spinner from a previous tool block if still running
+	r.StopSpinner(true)
+
 	r.toolName = name
 	r.toolInput.Reset()
 	r.inToolBlock = true
@@ -130,7 +141,13 @@ func (r *AgentRenderer) startSpinner() {
 				return
 			case <-ticker.C:
 				r.mu.Lock()
-				fmt.Fprintf(os.Stderr, " %s\033[2D", tui.Dim.Render(frames[i%len(frames)]))
+				// Write spinner: backspace previous frame (if any), then write new frame
+				if i > 0 {
+					fmt.Fprint(os.Stderr, "\b \b")
+				} else {
+					fmt.Fprint(os.Stderr, " ")
+				}
+				fmt.Fprint(os.Stderr, tui.Dim.Render(frames[i%len(frames)]))
 				r.mu.Unlock()
 				i++
 			}
@@ -143,10 +160,13 @@ func (r *AgentRenderer) StopSpinner(success bool) {
 		close(r.spinnerStop)
 		r.spinnerStop = nil
 
+		// Small delay to let spinner goroutine exit
+		time.Sleep(10 * time.Millisecond)
+
 		r.mu.Lock()
 		if r.isTTY {
-			// Clear spinner character and show result
-			fmt.Fprint(os.Stderr, " \033[1D")
+			// Erase spinner character (backspace, space, backspace)
+			fmt.Fprint(os.Stderr, "\b \b")
 		}
 		if success {
 			fmt.Fprint(os.Stderr, " "+tui.Green.Render("✔"))
