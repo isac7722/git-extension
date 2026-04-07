@@ -11,6 +11,7 @@ import (
 // AgentConfig holds agent-specific configuration.
 type AgentConfig struct {
 	AnthropicAPIKey string
+	Model           string
 }
 
 // AgentConfigPath returns the default path for agent credentials.
@@ -45,8 +46,11 @@ func LoadAgentConfigFrom(path string) (*AgentConfig, error) {
 		}
 		key = strings.TrimSpace(key)
 		value = strings.TrimSpace(value)
-		if key == "anthropic_api_key" {
+		switch key {
+		case "anthropic_api_key":
 			cfg.AnthropicAPIKey = value
+		case "model":
+			cfg.Model = value
 		}
 	}
 	return cfg, scanner.Err()
@@ -65,6 +69,9 @@ func SaveAgentConfigTo(path string, cfg *AgentConfig) error {
 	}
 
 	content := fmt.Sprintf("[default]\nanthropic_api_key = %s\n", cfg.AnthropicAPIKey)
+	if cfg.Model != "" {
+		content += fmt.Sprintf("model = %s\n", cfg.Model)
+	}
 	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 		return fmt.Errorf("write config: %w", err)
 	}

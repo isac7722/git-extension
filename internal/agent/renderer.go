@@ -22,13 +22,20 @@ func NewAgentRenderer() *AgentRenderer {
 	return &AgentRenderer{}
 }
 
-func (r *AgentRenderer) RenderWelcome(model string, tools []string) {
+func (r *AgentRenderer) RenderWelcome(model string, tools []string, version, latestVersion string) {
 	header := tui.Bold.Render("── Git Agent ─────────────────────────────")
+
+	versionLine := "  Version: " + version
+	if latestVersion != "" {
+		versionLine += " " + tui.Yellow.Render(fmt.Sprintf("(update available: v%s)", latestVersion))
+	}
+
 	info := tui.Dim.Render(fmt.Sprintf("  Model: %s | Tools: %s", model, strings.Join(tools, ", ")))
 	hint := tui.Dim.Render("  Type your request. Press Ctrl+D to exit.")
 	footer := tui.Bold.Render("──────────────────────────────────────────")
 
 	fmt.Fprintln(os.Stderr, header)
+	fmt.Fprintln(os.Stderr, versionLine)
 	fmt.Fprintln(os.Stderr, info)
 	fmt.Fprintln(os.Stderr, hint)
 	fmt.Fprintln(os.Stderr, footer)

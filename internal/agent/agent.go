@@ -9,6 +9,8 @@ import (
 
 	anthropic "github.com/anthropics/anthropic-sdk-go"
 	"github.com/isac7722/git-extension/internal/config"
+	"github.com/isac7722/git-extension/internal/update"
+	"github.com/isac7722/git-extension/internal/version"
 )
 
 type Agent struct {
@@ -28,11 +30,15 @@ func (e *ErrNoAPIKey) Error() string {
 
 func New() (*Agent, error) {
 	apiKey := os.Getenv("ANTHROPIC_API_KEY")
+	model := anthropic.ModelClaudeSonnet4_6
 
-	if apiKey == "" {
-		cfg, err := config.LoadAgentConfig()
-		if err == nil && cfg.AnthropicAPIKey != "" {
+	cfg, err := config.LoadAgentConfig()
+	if err == nil {
+		if cfg.AnthropicAPIKey != "" && apiKey == "" {
 			apiKey = cfg.AnthropicAPIKey
+		}
+		if cfg.Model != "" {
+			model = anthropic.Model(cfg.Model)
 		}
 	}
 
@@ -52,7 +58,7 @@ func New() (*Agent, error) {
 	return &Agent{
 		client:   client,
 		tools:    tools,
-		model:    anthropic.ModelClaudeSonnet4_5,
+		model:    model,
 		renderer: NewAgentRenderer(),
 	}, nil
 }
@@ -83,7 +89,12 @@ func (a *Agent) toolNames() []string {
 }
 
 func (a *Agent) runInteractive(ctx context.Context, systemPrompt string) error {
-	a.renderer.RenderWelcome(string(a.model), a.toolNames())
+	ver := version.Version
+	latestVersion := ""
+	if latest, hasUpdate := update.CheckCached(ver); hasUpdate {
+		latestVersion = latest
+	}
+	a.renderer.RenderWelcome(string(a.model), a.toolNames(), ver, latestVersion)
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -98,6 +109,15 @@ func (a *Agent) runInteractive(ctx context.Context, systemPrompt string) error {
 		}
 		if input == "exit" || input == "quit" {
 			break
+		}
+		if input == "/model" {
+			model, err := selectModel(a.model)
+			if err != nil {
+				a.renderer.RenderError(err)
+			} else {
+				a.model = model
+			}
+			continue
 		}
 
 		a.messages = append(a.messages, anthropic.NewBetaUserMessage(

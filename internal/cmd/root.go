@@ -13,14 +13,17 @@ import (
 	"github.com/isac7722/git-extension/internal/cmd/protection"
 	"github.com/isac7722/git-extension/internal/cmd/user"
 	"github.com/isac7722/git-extension/internal/cmd/worktree"
+	"github.com/isac7722/git-extension/internal/update"
+	"github.com/isac7722/git-extension/internal/version"
 	"github.com/spf13/cobra"
 )
 
 var versionStr = "dev"
 
 // SetVersionInfo sets version info from ldflags.
-func SetVersionInfo(version, _, _ string) {
-	versionStr = version
+func SetVersionInfo(v, _, _ string) {
+	versionStr = v
+	version.Version = v
 }
 
 var rootCmd = &cobra.Command{
@@ -71,6 +74,7 @@ func init() {
 	rootCmd.AddCommand(protection.Cmd)
 	rootCmd.AddCommand(agent.Cmd)
 	rootCmd.AddCommand(uninstallCmd)
+	rootCmd.AddCommand(upgradeCmd)
 
 	// "wt" alias for worktree
 	wtCmd := *worktree.Cmd
@@ -88,6 +92,14 @@ func Execute() error {
 	args := os.Args[1:]
 	if len(args) > 0 && !isKnownCommand(args[0]) {
 		return gitPassthrough(args)
+	}
+
+	// Background update check: show cached update notice, refresh cache async
+	if versionStr != "dev" {
+		if latest, hasUpdate := update.CheckCached(versionStr); hasUpdate {
+			fmt.Fprintf(os.Stderr, "  Update available: v%s → v%s (run 'ge upgrade')\n\n", versionStr, latest)
+		}
+		go update.CheckAndCache(versionStr)
 	}
 
 	return rootCmd.Execute()

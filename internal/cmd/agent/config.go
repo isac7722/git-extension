@@ -48,6 +48,11 @@ var showCmd = &cobra.Command{
 		}
 
 		fmt.Fprintf(os.Stderr, "Anthropic API Key: %s [%s]\n", maskKey(cfg.AnthropicAPIKey), config.AgentConfigPath())
+		if cfg.Model != "" {
+			fmt.Fprintf(os.Stderr, "Model: %s\n", cfg.Model)
+		} else {
+			fmt.Fprintf(os.Stderr, "Model: claude-sonnet-4-6 (default)\n")
+		}
 		return nil
 	},
 }
@@ -85,7 +90,11 @@ func maskKey(key string) string {
 }
 
 func saveAndConfirmKey(key string) error {
-	cfg := &config.AgentConfig{AnthropicAPIKey: key}
+	cfg, _ := config.LoadAgentConfig()
+	if cfg == nil {
+		cfg = &config.AgentConfig{}
+	}
+	cfg.AnthropicAPIKey = key
 	if err := config.SaveAgentConfig(cfg); err != nil {
 		return fmt.Errorf("failed to save API key: %w", err)
 	}
