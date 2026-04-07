@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.0](https://github.com/isac7722/git-extension/compare/v2.8.0...v2.9.0) (2026-04-07)
+
+
+### Features
+
+* **agent:** add configuration management and secure API key storage ([e85b5b2](https://github.com/isac7722/git-extension/commit/e85b5b2e92d786ff3839ce7fa08f8cb33dfb993e))
+
 ## [2.8.0](https://github.com/isac7722/git-extension/compare/v2.7.2...v2.8.0) (2026-04-07)
 
 
