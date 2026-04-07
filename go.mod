@@ -3,14 +3,15 @@ module github.com/isac7722/git-extension
 go 1.26.1
 
 require (
+	github.com/anthropics/anthropic-sdk-go v1.30.0
 	github.com/charmbracelet/bubbles v1.0.0
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/spf13/cobra v1.10.2
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/anthropics/anthropic-sdk-go v1.30.0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
@@ -44,5 +45,4 @@ require (
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

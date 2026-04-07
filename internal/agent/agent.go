@@ -135,7 +135,6 @@ func (a *Agent) executeAndPrint(ctx context.Context, systemPrompt string) error 
 	r.RenderAgentPrefix()
 
 	var lastMessage *anthropic.BetaMessage
-	firstIteration := true
 
 	for eventsIter, err := range runner.AllStreaming(ctx) {
 		if err != nil {
@@ -143,15 +142,8 @@ func (a *Agent) executeAndPrint(ctx context.Context, systemPrompt string) error 
 			return fmt.Errorf("streaming error: %w", err)
 		}
 
-		// Stop spinner from previous iteration's tool execution
-		if !firstIteration {
-			r.StopSpinner(true)
-		}
-		firstIteration = false
-
 		for event, err := range eventsIter {
 			if err != nil {
-				r.StopSpinner(false)
 				r.RenderError(err)
 				return fmt.Errorf("event error: %w", err)
 			}
@@ -177,7 +169,6 @@ func (a *Agent) executeAndPrint(ctx context.Context, systemPrompt string) error 
 		lastMessage = runner.LastMessage()
 	}
 
-	r.StopSpinner(true)
 	r.RenderNewline()
 
 	// Update message history with the full conversation

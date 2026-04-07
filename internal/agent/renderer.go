@@ -6,27 +6,20 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/isac7722/git-extension/internal/tui"
-	"github.com/mattn/go-isatty"
 )
 
 type AgentRenderer struct {
-	isTTY          bool
-	toolName       string
-	toolInput      strings.Builder
-	inToolBlock    bool
-	spinnerStop    chan struct{}
-	spinnerActive  bool // true after spinner has written at least one frame
-	mu             sync.Mutex
-	needNewline    bool // tracks whether we need a newline before the next text block
+	toolName    string
+	toolInput   strings.Builder
+	inToolBlock bool
+	mu          sync.Mutex
+	needNewline bool // tracks whether we need a newline before the next text block
 }
 
 func NewAgentRenderer() *AgentRenderer {
-	return &AgentRenderer{
-		isTTY: isatty.IsTerminal(os.Stderr.Fd()) || isatty.IsCygwinTerminal(os.Stderr.Fd()),
-	}
+	return &AgentRenderer{}
 }
 
 func (r *AgentRenderer) RenderWelcome(model string, tools []string) {
@@ -51,9 +44,6 @@ func (r *AgentRenderer) RenderAgentPrefix() {
 }
 
 func (r *AgentRenderer) RenderText(s string) {
-	// Stop spinner if a tool just finished and text is now streaming
-	r.StopSpinner(true)
-
 	if r.needNewline {
 		r.needNewline = false
 		fmt.Fprintln(os.Stderr)
@@ -65,9 +55,6 @@ func (r *AgentRenderer) RenderText(s string) {
 }
 
 func (r *AgentRenderer) StartToolBlock(name string) {
-	// Stop spinner from a previous tool block if still running
-	r.StopSpinner(true)
-
 	r.toolName = name
 	r.toolInput.Reset()
 	r.inToolBlock = true
@@ -89,7 +76,6 @@ func (r *AgentRenderer) FinishToolBlock() {
 	r.mu.Unlock()
 
 	r.inToolBlock = false
-	r.startSpinner()
 }
 
 func (r *AgentRenderer) formatToolCall(name, inputJSON string) string {
@@ -124,61 +110,6 @@ func (r *AgentRenderer) formatToolCall(name, inputJSON string) string {
 		}
 	}
 	return name + " " + inputJSON
-}
-
-func (r *AgentRenderer) startSpinner() {
-	if !r.isTTY {
-		return
-	}
-	r.spinnerActive = false
-	r.spinnerStop = make(chan struct{})
-	go func() {
-		frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
-		ticker := time.NewTicker(80 * time.Millisecond)
-		defer ticker.Stop()
-		i := 0
-		for {
-			select {
-			case <-r.spinnerStop:
-				return
-			case <-ticker.C:
-				r.mu.Lock()
-				if r.spinnerActive {
-					// Move cursor left 1 column, clear to end of line, write new frame
-					fmt.Fprintf(os.Stderr, "\033[1D\033[K%s", frames[i%len(frames)])
-				} else {
-					// First frame: write leading space + frame
-					fmt.Fprintf(os.Stderr, " %s", frames[i%len(frames)])
-					r.spinnerActive = true
-				}
-				r.mu.Unlock()
-				i++
-			}
-		}
-	}()
-}
-
-func (r *AgentRenderer) StopSpinner(success bool) {
-	if r.spinnerStop != nil {
-		close(r.spinnerStop)
-		r.spinnerStop = nil
-
-		// Small delay to let spinner goroutine exit
-		time.Sleep(10 * time.Millisecond)
-
-		r.mu.Lock()
-		if r.isTTY && r.spinnerActive {
-			// Move cursor left 2 columns (space + frame), clear to end of line
-			fmt.Fprint(os.Stderr, "\033[2D\033[K")
-		}
-		r.spinnerActive = false
-		if success {
-			fmt.Fprint(os.Stderr, " "+tui.Green.Render("✔"))
-		} else {
-			fmt.Fprint(os.Stderr, " "+tui.Red.Render("✗"))
-		}
-		r.mu.Unlock()
-	}
 }
 
 func (r *AgentRenderer) RenderError(err error) {
