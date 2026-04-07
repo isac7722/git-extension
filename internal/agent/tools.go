@@ -42,21 +42,19 @@ func buildTools() ([]anthropic.BetaTool, error) {
 		"git",
 		"Execute a git command. The 'git' prefix is added automatically.",
 		func(ctx context.Context, input GitCommandInput) (anthropic.BetaToolResultBlockParamContentUnion, error) {
-			args := strings.Fields(input.Command)
-			if len(args) == 0 {
+			if strings.TrimSpace(input.Command) == "" {
 				return textResult("Error: empty command"), nil
 			}
 
 			// Block dangerous commands without explicit subcommands
-			dangerous := map[string]bool{"push --force": true, "reset --hard": true, "clean -f": true}
-			cmdStr := strings.Join(args, " ")
-			for d := range dangerous {
-				if strings.Contains(cmdStr, d) {
-					return textResult(fmt.Sprintf("⚠️ Dangerous command detected: git %s\nThis command was executed but please confirm with the user first in future.", cmdStr)), nil
+			dangerous := []string{"push --force", "push -f", "reset --hard", "clean -f"}
+			for _, d := range dangerous {
+				if strings.Contains(input.Command, d) {
+					return textResult(fmt.Sprintf("⚠️ Dangerous command detected: git %s\nThis command was executed but please confirm with the user first in future.", input.Command)), nil
 				}
 			}
 
-			cmd := exec.CommandContext(ctx, "git", args...)
+			cmd := exec.CommandContext(ctx, "sh", "-c", "git "+input.Command)
 			output, err := cmd.CombinedOutput()
 			result := strings.TrimSpace(string(output))
 			if err != nil {
@@ -101,11 +99,10 @@ func buildTools() ([]anthropic.BetaTool, error) {
 		"gh",
 		"Execute a GitHub CLI (gh) command. The 'gh' prefix is added automatically. Use for PR creation, issue management, etc.",
 		func(ctx context.Context, input GhCommandInput) (anthropic.BetaToolResultBlockParamContentUnion, error) {
-			args := strings.Fields(input.Command)
-			if len(args) == 0 {
+			if strings.TrimSpace(input.Command) == "" {
 				return textResult("Error: empty command"), nil
 			}
-			cmd := exec.CommandContext(ctx, "gh", args...)
+			cmd := exec.CommandContext(ctx, "sh", "-c", "gh "+input.Command)
 			output, err := cmd.CombinedOutput()
 			result := strings.TrimSpace(string(output))
 			if err != nil {
