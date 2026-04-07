@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/isac7722/git-extension/internal/cmd/agent"
 	"github.com/isac7722/git-extension/internal/cmd/branch"
 	"github.com/isac7722/git-extension/internal/cmd/clean"
 	"github.com/isac7722/git-extension/internal/cmd/fetch"
@@ -68,6 +69,7 @@ func init() {
 	rootCmd.AddCommand(pr.Cmd)
 	rootCmd.AddCommand(fetch.Cmd)
 	rootCmd.AddCommand(protection.Cmd)
+	rootCmd.AddCommand(agent.Cmd)
 
 	// "wt" alias for worktree
 	wtCmd := *worktree.Cmd
