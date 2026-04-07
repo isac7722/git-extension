@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0](https://github.com/isac7722/git-extension/compare/v2.7.2...v2.8.0) (2026-04-07)
+
+
+### Features
+
+* **agent:** add AI-powered git agent using Claude ([9051209](https://github.com/isac7722/git-extension/commit/9051209c9ed42262f0fbe0d46cb466fefcfc463c))
+
 ## [2.7.2](https://github.com/isac7722/git-extension/compare/v2.7.1...v2.7.2) (2026-04-06)
 
 
