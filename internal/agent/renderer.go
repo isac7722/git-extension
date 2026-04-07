@@ -143,15 +143,14 @@ func (r *AgentRenderer) startSpinner() {
 				return
 			case <-ticker.C:
 				r.mu.Lock()
-				if i > 0 {
-					// Erase previous frame
-					fmt.Fprint(os.Stderr, "\b \b")
+				if r.spinnerActive {
+					// Move cursor left 1 column, clear to end of line, write new frame
+					fmt.Fprintf(os.Stderr, "\033[1D\033[K%s", frames[i%len(frames)])
 				} else {
-					// First frame: add leading space
-					fmt.Fprint(os.Stderr, " ")
+					// First frame: write leading space + frame
+					fmt.Fprintf(os.Stderr, " %s", frames[i%len(frames)])
 					r.spinnerActive = true
 				}
-				fmt.Fprint(os.Stderr, tui.Dim.Render(frames[i%len(frames)]))
 				r.mu.Unlock()
 				i++
 			}
@@ -169,8 +168,8 @@ func (r *AgentRenderer) StopSpinner(success bool) {
 
 		r.mu.Lock()
 		if r.isTTY && r.spinnerActive {
-			// Erase spinner frame and its leading space
-			fmt.Fprint(os.Stderr, "\b \b\b \b")
+			// Move cursor left 2 columns (space + frame), clear to end of line
+			fmt.Fprint(os.Stderr, "\033[2D\033[K")
 		}
 		r.spinnerActive = false
 		if success {
