@@ -69,6 +69,8 @@ func handleFirstTimeSetup() (*agentpkg.Agent, error) {
 	}
 
 	// Set env var so New() picks it up
-	os.Setenv("ANTHROPIC_API_KEY", key)
+	if err := os.Setenv("ANTHROPIC_API_KEY", key); err != nil {
+		return nil, err
+	}
 	return agentpkg.New()
 }

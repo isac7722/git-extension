@@ -40,7 +40,7 @@ func CheckLatest() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("GitHub API returned %d", resp.StatusCode)
@@ -74,7 +74,9 @@ func IsNewer(current, latest string) bool {
 func parseVersion(v string) [3]int {
 	v = strings.TrimPrefix(v, "v")
 	var parts [3]int
-	fmt.Sscanf(v, "%d.%d.%d", &parts[0], &parts[1], &parts[2])
+	if _, err := fmt.Sscanf(v, "%d.%d.%d", &parts[0], &parts[1], &parts[2]); err != nil {
+		return parts
+	}
 	return parts
 }
 
@@ -116,7 +118,7 @@ func upgradeBinary(latest string) error {
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("download failed: HTTP %d", resp.StatusCode)
@@ -126,7 +128,7 @@ func upgradeBinary(latest string) error {
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	if err := extractTarGz(resp.Body, tmpDir); err != nil {
 		return fmt.Errorf("extract failed: %w", err)
@@ -150,7 +152,7 @@ func extractTarGz(r io.Reader, dest string) error {
 	if err != nil {
 		return err
 	}
-	defer gz.Close()
+	defer func() { _ = gz.Close() }()
 
 	tr := tar.NewReader(gz)
 	for {
@@ -170,10 +172,12 @@ func extractTarGz(r io.Reader, dest string) error {
 			return err
 		}
 		if _, err := io.Copy(f, tr); err != nil {
-			f.Close()
+			_ = f.Close()
 			return err
 		}
-		f.Close()
+		if err := f.Close(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -183,16 +187,18 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
 	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
 	if err != nil {
 		return err
 	}
-	defer out.Close()
 
-	_, err = io.Copy(out, in)
-	return err
+	if _, err := io.Copy(out, in); err != nil {
+		_ = out.Close()
+		return err
+	}
+	return out.Close()
 }
 
 // CachePath returns the path to the update check cache file.
@@ -235,7 +241,9 @@ func CheckAndCache(current string) (latest string, hasUpdate bool) {
 
 func writeCache(version string) {
 	path := CachePath()
-	os.MkdirAll(filepath.Dir(path), 0755)
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return
+	}
 	content := fmt.Sprintf("%s\n%s\n", version, time.Now().Format(time.RFC3339))
-	os.WriteFile(path, []byte(content), 0644)
+	_ = os.WriteFile(path, []byte(content), 0644)
 }

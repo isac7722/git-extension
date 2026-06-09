@@ -47,7 +47,9 @@ func New() (*Agent, error) {
 	}
 
 	// Set env var so anthropic-sdk-go picks it up
-	os.Setenv("ANTHROPIC_API_KEY", apiKey)
+	if err := os.Setenv("ANTHROPIC_API_KEY", apiKey); err != nil {
+		return nil, err
+	}
 
 	client := anthropic.NewClient()
 	tools, err := buildTools()

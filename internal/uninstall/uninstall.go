@@ -150,14 +150,14 @@ func FormatPlan(plan *Plan) string {
 		if len(items) == 0 {
 			continue
 		}
-		sb.WriteString(fmt.Sprintf("\n  %s:\n", cat.label))
+		fmt.Fprintf(&sb, "\n  %s:\n", cat.label)
 		for _, t := range items {
-			sb.WriteString(fmt.Sprintf("    • %s\n", t.Description))
+			fmt.Fprintf(&sb, "    • %s\n", t.Description)
 		}
 	}
 
 	if plan.BinaryPath != "" {
-		sb.WriteString(fmt.Sprintf("\n  Binary:\n    • %s (manual removal required)\n", plan.BinaryPath))
+		fmt.Fprintf(&sb, "\n  Binary:\n    • %s (manual removal required)\n", plan.BinaryPath)
 	}
 
 	return sb.String()
