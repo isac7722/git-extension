@@ -125,7 +125,9 @@ Worktree setup can copy local files and run setup commands after `ge wt add`.
 
 ```yaml
 copy:
-  - from: .env
+  - from: /.vscode
+    to: /.vscode
+  - from: /.env
     to: /server-main/.env
   - from: packages/api/.env
     to: apps/api/.env
@@ -133,7 +135,7 @@ setup:
   - pnpm install
 ```
 
-`from` is resolved from the main worktree. `to` is resolved from the new worktree, and a leading `/` means the worktree root, not an OS absolute path. Existing shorthand entries like `- .env` still copy to the same path.
+`from` is resolved from the main worktree, and `to` is resolved from the new worktree. A leading `/` in either path means that worktree's root, not an OS absolute path. Existing shorthand entries like `- .env` still copy to the same path.
 
 ### Branch Cleanup — `ge clean`
 

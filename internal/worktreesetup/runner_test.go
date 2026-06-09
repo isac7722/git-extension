@@ -12,7 +12,7 @@ func TestCopyFilesMappedFileWithRootAlias(t *testing.T) {
 	dstDir := t.TempDir()
 	writeTestFile(t, filepath.Join(srcDir, ".env"), []byte("TOKEN=main\n"))
 
-	results := CopyFiles([]CopySpec{{From: ".env", To: "/server-main/.env"}}, srcDir, dstDir, false)
+	results := CopyFiles([]CopySpec{{From: "/.env", To: "/server-main/.env"}}, srcDir, dstDir, false)
 	if len(results) != 1 {
 		t.Fatalf("len(results) = %d, want 1", len(results))
 	}
@@ -23,6 +23,24 @@ func TestCopyFilesMappedFileWithRootAlias(t *testing.T) {
 		t.Fatalf("Copied = false, result = %+v", results[0])
 	}
 	assertFileContent(t, filepath.Join(dstDir, "server-main", ".env"), "TOKEN=main\n")
+}
+
+func TestCopyFilesMappedDirectoryWithRootAlias(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+	writeTestFile(t, filepath.Join(srcDir, ".vscode", "settings.json"), []byte("{}\n"))
+
+	results := CopyFiles([]CopySpec{{From: "/.vscode", To: "/.vscode"}}, srcDir, dstDir, false)
+	if len(results) != 1 {
+		t.Fatalf("len(results) = %d, want 1", len(results))
+	}
+	if results[0].Error != nil {
+		t.Fatalf("CopyFiles() error = %v", results[0].Error)
+	}
+	if !results[0].Copied || !results[0].IsDir || results[0].FilesCopied != 1 {
+		t.Fatalf("result = %+v, want copied directory with 1 file", results[0])
+	}
+	assertFileContent(t, filepath.Join(dstDir, ".vscode", "settings.json"), "{}\n")
 }
 
 func TestCopyFilesSkipAndForceOverwrite(t *testing.T) {

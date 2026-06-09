@@ -96,7 +96,7 @@ func CopyFiles(files []CopySpec, srcDir, dstDir string, force bool) []CopyResult
 }
 
 func copyFile(spec CopySpec, srcDir, dstDir string, force bool) CopyResult {
-	srcRel, err := cleanCopyPath(spec.From, false)
+	srcRel, err := cleanCopyPath(spec.From)
 	if err != nil {
 		return CopyResult{Source: spec.From, Target: spec.To, Error: err}
 	}
@@ -104,7 +104,7 @@ func copyFile(spec CopySpec, srcDir, dstDir string, force bool) CopyResult {
 	if target == "" {
 		target = spec.From
 	}
-	dstRel, err := cleanCopyPath(target, true)
+	dstRel, err := cleanCopyPath(target)
 	if err != nil {
 		return CopyResult{Source: srcRel, Target: target, Error: err}
 	}
@@ -244,14 +244,12 @@ func copyLabel(source, target string) string {
 	return source + " -> " + target
 }
 
-func cleanCopyPath(path string, allowRootAlias bool) (string, error) {
+func cleanCopyPath(path string) (string, error) {
 	if strings.TrimSpace(path) == "" {
 		return "", fmt.Errorf("path is required")
 	}
 	cleaned := filepath.Clean(path)
-	if allowRootAlias {
-		cleaned = strings.TrimLeft(cleaned, string(filepath.Separator))
-	}
+	cleaned = strings.TrimLeft(cleaned, string(filepath.Separator))
 	if cleaned == "" {
 		return "", fmt.Errorf("path is required")
 	}
