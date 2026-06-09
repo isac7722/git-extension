@@ -1,6 +1,7 @@
 package worktreesetup
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -11,8 +12,45 @@ const ConfigFile = ".ge-worktree.yaml"
 
 // Config represents the worktree setup configuration.
 type Config struct {
-	Copy  []string `yaml:"copy,omitempty"`
-	Setup []string `yaml:"setup,omitempty"`
+	Copy  []CopySpec `yaml:"copy,omitempty"`
+	Setup []string   `yaml:"setup,omitempty"`
+}
+
+// CopySpec describes a copy from the main worktree to a target worktree.
+type CopySpec struct {
+	From string `yaml:"from"`
+	To   string `yaml:"to"`
+}
+
+// UnmarshalYAML supports both the current object form and the legacy string
+// shorthand where the source and destination paths are identical.
+func (c *CopySpec) UnmarshalYAML(value *yaml.Node) error {
+	switch value.Kind {
+	case yaml.ScalarNode:
+		var path string
+		if err := value.Decode(&path); err != nil {
+			return err
+		}
+		c.From = path
+		c.To = path
+		return nil
+	case yaml.MappingNode:
+		type copySpec CopySpec
+		var spec copySpec
+		if err := value.Decode(&spec); err != nil {
+			return err
+		}
+		if spec.From == "" {
+			return fmt.Errorf("copy.from is required")
+		}
+		if spec.To == "" {
+			spec.To = spec.From
+		}
+		*c = CopySpec(spec)
+		return nil
+	default:
+		return fmt.Errorf("copy entries must be a path string or from/to mapping")
+	}
 }
 
 // Load reads .ge-worktree.yaml from the given directory.

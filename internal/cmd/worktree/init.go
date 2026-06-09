@@ -86,7 +86,10 @@ func selectAndBuildConfig(suggestions []worktreesetup.Suggestion) (*worktreesetu
 		s := suggestions[idx]
 		switch s.Type {
 		case "copy":
-			cfg.Copy = append(cfg.Copy, s.Value)
+			cfg.Copy = append(cfg.Copy, worktreesetup.CopySpec{
+				From: s.Value,
+				To:   s.Value,
+			})
 		case "setup":
 			cfg.Setup = append(cfg.Setup, s.Value)
 		}

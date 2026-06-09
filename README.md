@@ -115,9 +115,25 @@ ge branch <any git branch args>   # passthrough to git branch
 ge worktree add <branch> [dir]   # create worktree (auto-creates branch if needed)
 ge worktree list                 # list worktrees with status indicators
 ge worktree remove [path]        # remove worktree (interactive if no path given)
+ge worktree init                 # generate .ge-worktree.yaml from detected setup
+ge worktree setup                # re-run setup in the current worktree
 ```
 
 `ge wt` is an alias for `ge worktree`.
+
+Worktree setup can copy local files and run setup commands after `ge wt add`.
+
+```yaml
+copy:
+  - from: .env
+    to: /server-main/.env
+  - from: packages/api/.env
+    to: apps/api/.env
+setup:
+  - pnpm install
+```
+
+`from` is resolved from the main worktree. `to` is resolved from the new worktree, and a leading `/` means the worktree root, not an OS absolute path. Existing shorthand entries like `- .env` still copy to the same path.
 
 ### Branch Cleanup — `ge clean`
 

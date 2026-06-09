@@ -14,7 +14,8 @@ import (
 
 // CopyResult holds the result of a file copy operation.
 type CopyResult struct {
-	File         string
+	Source       string
+	Target       string
 	Copied       bool
 	Skipped      bool
 	Error        error
@@ -57,19 +58,20 @@ func Run(cfg *Config, srcDir, dstDir string, force bool) bool {
 
 // CopyFiles copies files from srcDir to dstDir.
 // If force is false, existing files are skipped.
-func CopyFiles(files []string, srcDir, dstDir string, force bool) []CopyResult {
+func CopyFiles(files []CopySpec, srcDir, dstDir string, force bool) []CopyResult {
 	var results []CopyResult
-	for _, f := range files {
-		r := copyFile(f, srcDir, dstDir, force)
+	for _, spec := range files {
+		r := copyFile(spec, srcDir, dstDir, force)
 		results = append(results, r)
+		label := copyLabel(r.Source, r.Target)
 
 		switch {
 		case r.Error != nil:
 			fmt.Fprintf(os.Stderr, "    %s %s\n",
 				tui.Red.Render("✗"),
-				fmt.Sprintf("Copy %s: %s", f, r.Error))
+				fmt.Sprintf("Copy %s: %s", label, r.Error))
 		case r.IsDir:
-			msg := fmt.Sprintf("Copied %s/ (%d files", f, r.FilesCopied)
+			msg := fmt.Sprintf("Copied %s/ (%d files", label, r.FilesCopied)
 			if r.FilesSkipped > 0 {
 				msg += fmt.Sprintf(", %d skipped", r.FilesSkipped)
 			}
@@ -77,49 +79,68 @@ func CopyFiles(files []string, srcDir, dstDir string, force bool) []CopyResult {
 			if r.FilesCopied == 0 && r.FilesSkipped > 0 {
 				fmt.Fprintf(os.Stderr, "    %s %s\n",
 					tui.Dim.Render("-"),
-					tui.Dim.Render(fmt.Sprintf("%s/ (all %d exist, skip)", f, r.FilesSkipped)))
+					tui.Dim.Render(fmt.Sprintf("%s/ (all %d exist, skip)", label, r.FilesSkipped)))
 			} else {
 				fmt.Fprintf(os.Stderr, "    %s %s\n", tui.Green.Render("✔"), msg)
 			}
 		case r.Skipped:
 			fmt.Fprintf(os.Stderr, "    %s %s\n",
 				tui.Dim.Render("-"),
-				tui.Dim.Render(fmt.Sprintf("%s (exists, skip)", f)))
+				tui.Dim.Render(fmt.Sprintf("%s (exists, skip)", label)))
 		default:
 			fmt.Fprintf(os.Stderr, "    %s Copied %s\n",
-				tui.Green.Render("✔"), f)
+				tui.Green.Render("✔"), label)
 		}
 	}
 	return results
 }
 
-func copyFile(name, srcDir, dstDir string, force bool) CopyResult {
-	srcPath := filepath.Join(srcDir, name)
-	dstPath := filepath.Join(dstDir, name)
+func copyFile(spec CopySpec, srcDir, dstDir string, force bool) CopyResult {
+	srcRel, err := cleanCopyPath(spec.From, false)
+	if err != nil {
+		return CopyResult{Source: spec.From, Target: spec.To, Error: err}
+	}
+	target := spec.To
+	if target == "" {
+		target = spec.From
+	}
+	dstRel, err := cleanCopyPath(target, true)
+	if err != nil {
+		return CopyResult{Source: srcRel, Target: target, Error: err}
+	}
+	result := CopyResult{Source: srcRel, Target: dstRel}
+
+	srcPath := filepath.Join(srcDir, srcRel)
+	dstPath := filepath.Join(dstDir, dstRel)
 
 	srcInfo, err := os.Stat(srcPath)
 	if err != nil {
-		return CopyResult{File: name, Error: fmt.Errorf("source not found")}
+		result.Error = fmt.Errorf("source not found")
+		return result
 	}
 
 	if srcInfo.IsDir() {
-		return copyDir(name, srcPath, dstPath, force)
+		return copyDir(result, srcPath, dstPath, force)
 	}
 
 	if !force {
 		if _, err := os.Stat(dstPath); err == nil {
-			return CopyResult{File: name, Skipped: true}
+			result.Skipped = true
+			return result
 		}
 	}
 
 	if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
-		return CopyResult{File: name, Error: err}
+		result.Error = err
+		return result
 	}
 
 	if err := writeFile(srcPath, dstPath, srcInfo.Mode()); err != nil {
-		return CopyResult{File: name, Error: err}
+		result.Error = err
+		return result
 	}
-	return CopyResult{File: name, Copied: true}
+	result.Copied = true
+	return result
 }
 
 func writeFile(srcPath, dstPath string, mode os.FileMode) error {
@@ -144,9 +165,9 @@ func writeFile(srcPath, dstPath string, mode os.FileMode) error {
 // copyDir recursively copies srcRoot to dstRoot, honoring the source's
 // .gitignore (top-level only) and always excluding .git. Existing files
 // at the destination are skipped unless force is true.
-func copyDir(name, srcRoot, dstRoot string, force bool) CopyResult {
+func copyDir(result CopyResult, srcRoot, dstRoot string, force bool) CopyResult {
 	ignored := loadGitignore(srcRoot)
-	result := CopyResult{File: name, IsDir: true}
+	result.IsDir = true
 
 	walkErr := filepath.WalkDir(srcRoot, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -214,6 +235,33 @@ func copyDir(name, srcRoot, dstRoot string, force bool) CopyResult {
 		result.Skipped = true
 	}
 	return result
+}
+
+func copyLabel(source, target string) string {
+	if source == target || target == "" {
+		return source
+	}
+	return source + " -> " + target
+}
+
+func cleanCopyPath(path string, allowRootAlias bool) (string, error) {
+	if strings.TrimSpace(path) == "" {
+		return "", fmt.Errorf("path is required")
+	}
+	cleaned := filepath.Clean(path)
+	if allowRootAlias {
+		cleaned = strings.TrimLeft(cleaned, string(filepath.Separator))
+	}
+	if cleaned == "" {
+		return "", fmt.Errorf("path is required")
+	}
+	if filepath.IsAbs(cleaned) {
+		return "", fmt.Errorf("absolute paths are not supported")
+	}
+	if cleaned == "." || cleaned == ".." || strings.HasPrefix(cleaned, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("path must stay inside the worktree")
+	}
+	return cleaned, nil
 }
 
 // RunCommands executes commands in the given working directory.
