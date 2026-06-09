@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.2](https://github.com/isac7722/git-extension/compare/v2.12.1...v2.12.2) (2026-06-09)
+
+
+### Bug Fixes
+
+* allow root aliases in copy sources ([e13b5e0](https://github.com/isac7722/git-extension/commit/e13b5e0e939a6b8bebf0a27dae81963859268cac))
+
 ## [2.12.1](https://github.com/isac7722/git-extension/compare/v2.12.0...v2.12.1) (2026-06-09)
 
 
