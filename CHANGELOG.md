@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.12.0](https://github.com/isac7722/git-extension/compare/v2.11.0...v2.12.0) (2026-06-09)
+
+
+### Features
+
+* support mapped worktree copy paths ([74a8e92](https://github.com/isac7722/git-extension/commit/74a8e925b19919fe219114f8bf8359cd5918e136))
+* **worktree:** support directory copy in .ge-worktree.yaml ([46af7de](https://github.com/isac7722/git-extension/commit/46af7de05425071fdcc80228803ce69ac61289a9))
+
 ## [2.11.0](https://github.com/isac7722/git-extension/compare/v2.10.0...v2.11.0) (2026-04-07)
 
 
