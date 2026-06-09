@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.1](https://github.com/isac7722/git-extension/compare/v2.12.0...v2.12.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* satisfy lint checks ([3343c5c](https://github.com/isac7722/git-extension/commit/3343c5cc9c14f534443ba10ebc596dcfc331a4ae))
+
 ## [2.12.0](https://github.com/isac7722/git-extension/compare/v2.11.0...v2.12.0) (2026-06-09)
 
 
